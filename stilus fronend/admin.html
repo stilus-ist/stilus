@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STILUS Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#111;padding:30px}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.container{max-width:1250px;margin:0 auto}.hidden{display:none!important}
+.login-card,.card{background:#fff;border:1px solid #ddd;padding:25px}
+.login-card{max-width:420px;margin:80px auto}.login-card h1{margin-bottom:20px}
+.login-card input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ccc}
+.login-error,.error-message{color:#b00020;margin-top:12px}.success-message{color:#08752c;margin-top:12px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px}
+.header-actions,.tabs,.form-actions,.button-row{display:flex;gap:10px;flex-wrap:wrap}
+.main-btn,.secondary-btn,.danger-btn,.tab-btn{border:none;padding:11px 16px;font-weight:bold}
+.main-btn{background:#111;color:#fff}.secondary-btn{background:#ddd;color:#111}.danger-btn{background:#8b0000;color:#fff}
+.tabs{margin-bottom:25px;border-bottom:1px solid #ddd;padding-bottom:10px}
+.tab-btn{border:1px solid #111;background:#fff}.tab-btn.active{background:#111;color:#fff}
+.section-header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px}
+.search-box,.form-card,.table-card{background:#fff;border:1px solid #ddd;padding:20px;margin-bottom:25px}
+.search-row{display:flex;gap:10px}.search-row input{flex:1;padding:12px;border:1px solid #ccc}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.orders-grid,.products-grid{display:grid;gap:20px}
+.products-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.order-card,.product-card{background:#fff;border:1px solid #ddd;padding:20px}
+.order-top{display:flex;justify-content:space-between;gap:20px;margin-bottom:20px}.order-number{font-weight:bold;font-size:18px}
+.status{text-transform:uppercase;font-weight:bold}.order-info{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.order-items{margin-top:15px;border-top:1px solid #ddd;padding-top:15px}.order-item{display:flex;justify-content:space-between;gap:20px;margin-bottom:8px}
+.status-controls{margin-top:15px}.status-controls select{padding:9px}
+.product-image{width:100%;height:250px;object-fit:cover;background:#eee;margin-bottom:12px}
+.product-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.product-gallery img{width:100%;height:90px;object-fit:cover;border:1px solid #ddd}
+.product-card h3{margin-bottom:8px}.product-meta{margin-bottom:6px}
+.stock-list{border-top:1px solid #ddd;margin-top:15px;padding-top:15px}.stock-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.form-group{margin-bottom:15px}.form-group label{display:block;font-weight:bold;margin-bottom:7px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px;border:1px solid #ccc}
+.form-group textarea{min-height:100px;resize:vertical}.form-help{font-size:13px;color:#666;margin-top:6px;line-height:1.5}
+.fixed-stock-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+.fixed-stock-item{display:flex;align-items:center;justify-content:space-between;border:1px solid #ccc;padding:10px 12px}
+.fixed-stock-item label{font-weight:700}.fixed-stock-item input{width:90px;padding:9px;border:1px solid #bbb}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:10px;text-align:left;vertical-align:top}th{background:#f0f0f0}
+.badge{display:inline-block;padding:4px 8px;border:1px solid #bbb;font-size:12px;font-weight:bold}
+.report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}.metric{background:#fff;border:1px solid #ddd;padding:18px}.metric strong{display:block;font-size:24px;margin-top:6px}
+.checkbox-row{display:flex;gap:8px;align-items:center}.checkbox-row input{width:auto}
+@media(max-width:700px){
+ body{padding:15px}.header,.section-header,.order-top,.search-row{flex-direction:column;align-items:stretch}
+ .order-info{grid-template-columns:1fr}.tabs,.header-actions,.form-actions{flex-direction:column}
+ .report-grid{grid-template-columns:1fr 1fr}.fixed-stock-grid{grid-template-columns:1fr}
+}
+.image-upload-stack{display:flex;flex-direction:column;gap:12px}.image-upload-row{border:1px solid #ddd;padding:12px;border-radius:4px;display:flex;flex-direction:column;gap:7px}.image-upload-row label{font-weight:800;font-size:12px}.image-upload-row input[type=file]{width:100%}.required{color:#b91c1c}.optional{font-weight:500;color:#777;font-size:11px}
+</style>
+</head>
+<body>
+<div class="container">
+<div id="loginView" class="login-card">
+<h1>STILUS Admin Login</h1>
+<input type="text" id="adminUsername" placeholder="Username" autocomplete="username">
+<input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password">
+<button class="main-btn" onclick="loginAdmin()">Login</button>
+<div id="loginError" class="login-error"></div>
+</div>
+<div id="adminView" class="hidden">
+<div class="header">
+<h1>STILUS Admin</h1>
+<div class="header-actions">
+
+<button class="danger-btn" onclick="logoutAdmin()">Logout</button>
+</div>
+</div>
+
+<div class="tabs">
+<button id="ordersTabButton" class="tab-btn active" onclick="showSection('orders')">Orders</button>
+<button id="productsTabButton" class="tab-btn" onclick="showSection('products')">Products</button>
+<button id="customersTabButton" class="tab-btn" onclick="showSection('customers')">Customers</button>
+<button id="couponsTabButton" class="tab-btn" onclick="showSection('coupons')">Discount Codes</button>
+<button id="settingsTabButton" class="tab-btn" onclick="showSection('settings')">Store Settings</button>
+<button id="reportTabButton" class="tab-btn" onclick="showSection('report')">Monthly Report</button>
+</div>
+
+<section id="ordersSection">
+<div class="search-box"><h2>Find Order</h2><div class="search-row">
+<input id="orderSearchInput" placeholder="Enter order number">
+<button class="main-btn" onclick="searchOrder()">Search</button>
+<button class="secondary-btn" onclick="clearSearch()">Show All</button>
+</div></div>
+<div id="ordersContainer"><div class="message">Loading orders...</div></div>
+</section>
+
+<section id="productsSection" class="hidden">
+<div class="section-header"><h2>Products</h2><button class="main-btn" onclick="showAddProductForm()">Add Product</button></div>
+<div id="addProductForm" class="form-card hidden">
+<h2>Add Product</h2>
+<div class="form-group"><label>Product ID</label><input id="productId" placeholder="Auto-generated (STL-0001)" readonly><div class="form-help">Generated automatically when the product is saved.</div></div>
+<div class="form-group"><label>Category</label><select id="productCategory"><option value="hoodies">Hoodies</option><option value="tshirts">T-Shirts</option><option value="pants">Pants</option><option value="shorts">Shorts</option><option value="accessories">Accessories</option></select></div>
+<div class="form-group"><label>Product Name</label><input id="productName" placeholder="New Product"></div>
+<div class="form-group"><label>Price</label><input type="number" id="productPrice" min="0" step="1"></div>
+<div class="form-group">
+<label>Product Images</label>
+<div class="image-upload-stack">
+  <div class="image-upload-row"><label for="productImage1">Image 1 <span class="required">*</span></label><input type="file" id="productImage1" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+  <div class="image-upload-row"><label for="productImage2">Image 2 <span class="optional">(optional)</span></label><input type="file" id="productImage2" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+</div>
+<div class="form-help">Image 1 is the main product image. Image 2 is the second image shown on the product page.</div>
+<div id="productImagePreviewGrid" class="product-gallery"></div>
+</div>
+<div class="form-group"><label>Stock</label><div id="productStockGrid" class="fixed-stock-grid"></div><input type="hidden" id="productStock"></div>
+<div class="form-actions"><button class="main-btn" onclick="addProduct()">Save Product</button><button class="secondary-btn" onclick="hideAddProductForm()">Cancel</button></div>
+<div id="productFormMessage"></div>
+</div>
+
+<div id="editProductForm" class="form-card hidden">
+<h2>Edit Product</h2>
+<div class="form-group"><label>Product ID</label><input id="editProductId" disabled></div>
+<div class="form-group"><label>Category</label><select id="editProductCategory"><option value="hoodies">Hoodies</option><option value="tshirts">T-Shirts</option><option value="pants">Pants</option><option value="shorts">Shorts</option><option value="accessories">Accessories</option></select></div>
+<div class="form-group"><label>Product Name</label><input id="editProductName"></div>
+<div class="form-group"><label>Price</label><input type="number" id="editProductPrice" min="0" step="1"></div>
+<div class="form-group">
+<label>Product Images</label>
+<div class="image-upload-stack">
+  <div class="image-upload-row"><label for="editProductImage1">Image 1 <span class="optional">(optional)</span></label><input type="file" id="editProductImage1" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+  <div class="image-upload-row"><label for="editProductImage2">Image 2 <span class="optional">(optional)</span></label><input type="file" id="editProductImage2" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+</div>
+<div class="form-help">Leave both empty to keep the current images. Choose an image to replace that position.</div>
+<div id="editProductCurrentImages" class="product-gallery"></div>
+</div>
+<div class="form-group"><label>Stock — quantities only</label><div id="editProductStockGrid" class="fixed-stock-grid"></div><input type="hidden" id="editProductStock"></div>
+<div class="form-actions"><button class="main-btn" onclick="updateProduct()">Save Changes</button><button class="secondary-btn" onclick="hideEditProductForm()">Cancel</button></div>
+<div id="editProductFormMessage"></div>
+</div>
+<div id="productsContainer"><div class="message">Loading products...</div></div>
+</section>
+
+<section id="customersSection" class="hidden">
+<div class="section-header"><h2>Customers</h2></div>
+<div class="form-card">
+<h2>Email Registered Customers</h2>
+<div class="form-help" style="margin-bottom:15px">Send an email to all customers registered on STIŁUS.</div>
+<div class="form-group"><label>Subject</label><input id="customerEmailSubject" maxlength="200" placeholder="New drop, special offer..."></div>
+<div class="form-group"><label>Message</label><textarea id="customerEmailMessage" maxlength="10000" placeholder="Write your email message here..."></textarea></div>
+<div class="form-actions"><button class="main-btn" id="sendCustomersEmailBtn" onclick="sendEmailToCustomers()">Send Email to All Customers</button></div>
+<div id="customerEmailMessageStatus"></div>
+</div>
+<div id="customersContainer"><div class="message">Loading customers...</div></div>
+</section>
+
+<section id="couponsSection" class="hidden">
+<div class="section-header"><h2>Discount Codes</h2><button class="main-btn" onclick="showCouponForm()">Add Discount Code</button></div>
+
+<div class="form-card">
+<h2>Sitewide Product Sale</h2>
+<div class="form-help" style="margin-bottom:15px">Apply one percentage sale to every product on the website. Customers will see the original price and the discounted price.</div>
+<div class="grid">
+<div class="form-group"><label>Discount Percentage</label><input type="number" id="sitewideSalePercentage" min="0" max="100" step="0.01" placeholder="20"></div>
+<div class="form-group"><label>Starts At</label><input type="datetime-local" id="sitewideSaleStartsAt"></div>
+<div class="form-group"><label>Expires At</label><input type="datetime-local" id="sitewideSaleExpiresAt"></div>
+</div>
+<div class="checkbox-row"><input type="checkbox" id="sitewideSaleActive"><label for="sitewideSaleActive">Active</label></div>
+<div class="form-actions" style="margin-top:15px"><button class="main-btn" onclick="saveSitewideSale()">Save Sitewide Sale</button></div>
+<div id="sitewideSaleMessage"></div>
+</div>
+<div id="couponForm" class="form-card hidden">
+<h2 id="couponFormTitle">Add Discount Code</h2>
+<input type="hidden" id="couponId">
+<div class="grid">
+<div class="form-group"><label>Code</label><input id="couponCode" placeholder="WELCOME10"></div>
+<div class="form-group"><label>Discount Type</label><select id="couponDiscountType" onchange="updateCouponTypeFields()"><option value="percentage">Percentage</option><option value="fixed">Fixed Amount</option><option value="free_shipping">Free Shipping</option><option value="buy_x_get_y">Buy X Get Y</option></select></div>
+<div class="form-group"><label>Value</label><input type="number" id="couponValue" min="0" step="0.01"></div>
+<div class="form-group"><label>Maximum Discount</label><input type="number" id="couponMaxDiscount" min="0" step="0.01"></div>
+<div class="form-group"><label>Minimum Order Amount</label><input type="number" id="couponMinOrderAmount" min="0" step="0.01"></div>
+<div class="form-group"><label>Applies To</label><select id="couponAppliesTo"><option value="all">All Products</option><option value="products">Specific Products</option><option value="category">Category</option></select></div>
+<div class="form-group"><label>Product IDs</label><input id="couponProductIds" placeholder="hoodie-1, hoodie-2"></div>
+<div class="form-group"><label>Category</label><select id="couponCategory"><option value="">Choose category</option><option value="hoodies">Hoodies</option><option value="tshirts">T-Shirts</option><option value="pants">Pants</option><option value="shorts">Shorts</option><option value="accessories">Accessories</option></select></div>
+<div class="form-group"><label>Buy Quantity</label><input type="number" id="couponBuyQuantity" min="1"></div>
+<div class="form-group"><label>Get Quantity</label><input type="number" id="couponGetQuantity" min="1"></div>
+<div class="form-group"><label>Usage Limit</label><input type="number" id="couponUsageLimit" min="1"></div>
+<div class="form-group"><label>Per Customer Limit</label><input type="number" id="couponPerCustomerLimit" min="1"></div>
+<div class="form-group"><label>Starts At</label><input type="datetime-local" id="couponStartsAt"></div>
+<div class="form-group"><label>Expires At</label><input type="datetime-local" id="couponExpiresAt"></div>
+<div class="form-group"><label>Customer Email (optional)</label><input type="email" id="couponCustomerEmail"></div>
+</div>
+<div class="checkbox-row"><input type="checkbox" id="couponFirstOrderOnly"><label for="couponFirstOrderOnly">First order only</label></div>
+<div class="checkbox-row" style="margin-top:8px"><input type="checkbox" id="couponActive" checked><label for="couponActive">Active</label></div>
+<div class="form-actions" style="margin-top:15px"><button class="main-btn" onclick="saveCoupon()">Save Discount Code</button><button class="secondary-btn" onclick="hideCouponForm()">Cancel</button></div>
+<div id="couponFormMessage"></div>
+</div>
+<div id="couponsContainer"><div class="message">Loading discount codes...</div></div>
+</section>
+
+<section id="settingsSection" class="hidden">
+<div class="section-header"><h2>Store Settings</h2></div>
+<div class="form-card">
+<div class="grid">
+<div class="form-group"><label>Store Name</label><input id="storeName" value="STIŁUS" readonly></div>
+<div class="form-group"><label>Currency</label><input id="storeCurrency" placeholder="TL"></div>
+<div class="form-group"><label>Standard Shipping</label><input type="number" id="standardShipping" min="0" step="0.01"></div>
+<div class="form-group"><label>Express Shipping</label><input type="number" id="expressShipping" min="0" step="0.01"></div>
+<div class="form-group"><label>International Shipping</label><input type="number" id="internationalShipping" min="0" step="0.01"></div>
+<div class="form-group"><label>Free Shipping Threshold</label><input type="number" id="freeShippingThreshold" min="0" step="0.01"></div>
+<div class="form-group"><label>Contact Email</label><input type="email" id="contactEmail"></div>
+<div class="form-group"><label>Contact Phone</label><input id="contactPhone"></div>
+</div>
+<div class="checkbox-row"><input type="checkbox" id="maintenanceMode"><label for="maintenanceMode">Maintenance Mode</label></div>
+<div class="form-actions" style="margin-top:15px"><button class="main-btn" onclick="saveSettings()">Save Settings</button></div>
+<div id="settingsMessage"></div>
+</div>
+</section>
+
+<section id="reportSection" class="hidden">
+<div class="section-header"><h2>Monthly Report</h2></div>
+<div class="search-box"><div class="search-row"><input type="month" id="reportMonth"><button class="main-btn" onclick="loadReport()">Generate Report</button></div></div>
+<div id="reportContainer"><div class="message">Choose a month.</div></div>
+
+<div class="form-card">
+<h2>Homepage Banner</h2>
+<div class="form-group"><label>Banner Image / GIF</label><input type="file" id="homepageBannerFile" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+<div id="homepageBannerPreview" class="product-gallery"></div>
+<div class="form-actions"><button class="main-btn" id="saveHomepageBannerBtn" onclick="saveHomepageBanner()">Save Banner</button></div>
+<div id="homepageBannerMessage"></div>
+</div>
+</section>
+</div>
+</div>
+
+<script>
+const API_URL="http://localhost:5000";
+const TOKEN_KEY="stilus_admin_token";
+let currentSection="orders";
+
+const FIXED_SIZES={
+ hoodies:["XS","S","M","L","XL","XXL"], tshirts:["XS","S","M","L","XL","XXL"],
+ "t-shirts":["XS","S","M","L","XL","XXL"], shorts:["XS","S","M","L","XL","XXL"],
+ pants:["28","29","30","31","32","33","34","35","36","37","38"], accessories:["ONE SIZE"]
+};
+function sizesFor(c){return FIXED_SIZES[String(c||"").toLowerCase()]||FIXED_SIZES.hoodies}
+function getToken(){return localStorage.getItem(TOKEN_KEY)||sessionStorage.getItem(TOKEN_KEY)}
+function saveToken(t){localStorage.setItem(TOKEN_KEY,t);sessionStorage.setItem(TOKEN_KEY,t)}
+function removeToken(){localStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_KEY)}
+function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function escJs(v){return String(v??"").replaceAll("\\","\\\\").replaceAll("'","\\'")}
+function showLogin(){document.getElementById("loginView").classList.remove("hidden");document.getElementById("adminView").classList.add("hidden");document.getElementById("adminUsername").value="";document.getElementById("adminPassword").value=""}
+function showAdmin(){document.getElementById("loginView").classList.add("hidden");document.getElementById("adminView").classList.remove("hidden")}
+async function loginAdmin(){
+ const username=document.getElementById("adminUsername").value.trim();
+ const password=document.getElementById("adminPassword").value;
+ const e=document.getElementById("loginError"); e.textContent="";
+ if(!username||!password){e.textContent="Username and password are required";return}
+ try{
+   const r=await fetch(API_URL+"/api/admin/login",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({username,password})
+   });
+   const d=await r.json();
+   if(!r.ok||!d.success)throw new Error(d.message||"Login failed");
+   saveToken(d.token);showAdmin();showSection("orders");
+ }catch(x){e.textContent=x.message||"Invalid username or password."}
+}
+async function logoutAdmin(){const t=getToken();if(t)try{await fetch(API_URL+"/api/admin/logout",{method:"POST",headers:{Authorization:"Bearer "+t}})}catch{}removeToken();showLogin()}
+async function checkSession(){
+  const t=getToken();
+
+  // On a normal browser refresh, keep the admin screen visible immediately.
+  // The token is persisted in localStorage/sessionStorage, so a refresh must
+  // not behave like a logout.
+  if(!t){
+    showLogin();
+    return;
+  }
+
+  showAdmin();
+
+  try{
+    const r=await fetch(API_URL+"/api/admin/session",{
+      headers:{Authorization:"Bearer "+t}
+    });
+
+    // Only clear the saved token when the server explicitly says it is invalid.
+    if(r.status===401 || r.status===403){
+      removeToken();
+      showLogin();
+      return;
+    }
+
+    if(!r.ok) throw new Error("Session check failed");
+
+    const d=await r.json().catch(()=>({success:true}));
+    if(d.success===false) throw new Error("Invalid admin session");
+
+    // Refresh the current admin data without changing the URL/history.
+    showSection(currentSection);
+  }catch(error){
+    // A temporary network/server error must NOT log the admin out.
+    console.error("Session check error:",error);
+    showSection(currentSection);
+  }
+}
+function sectionIds(){return ["orders","products","customers","coupons","settings","report"]}
+function showSection(s){
+ currentSection=s;
+ sectionIds().forEach(x=>document.getElementById(x+"Section").classList.toggle("hidden",x!==s));
+ const buttons={orders:"ordersTabButton",products:"productsTabButton",customers:"customersTabButton",coupons:"couponsTabButton",settings:"settingsTabButton",report:"reportTabButton"};sectionIds().forEach(x=>{const b=document.getElementById(buttons[x]);if(b)b.classList.toggle("active",x===s)});
+ if(s==="orders")loadOrders(); if(s==="products")loadProducts(); if(s==="customers")loadCustomers(); if(s==="coupons"){loadCoupons();loadSitewideSale();} if(s==="settings")loadSettings(); if(s==="report"){loadReport();loadHomepageBanner();}
+}
+function refreshCurrentSection(){window.scrollTo({top:0,behavior:"smooth"});showSection(currentSection)}
+
+async function api(path,opts={}){
+ const t=getToken(); if(!t){showLogin();throw new Error("Not authenticated")}
+ const r=await fetch(API_URL+path,{...opts,headers:{...(opts.headers||{}),Authorization:"Bearer "+t}});
+ const d=await r.json().catch(()=>({success:false,message:"Invalid server response"}));
+ if(r.status===401){removeToken();showLogin();throw new Error("Session expired")}
+ if(!r.ok||d.success===false)throw new Error(d.message||"Request failed");
+ return d;
+}
+
+async function loadOrders(){
+ const c=document.getElementById("ordersContainer");c.innerHTML='<div class="message">Loading orders...</div>';
+ try{const d=await api("/api/orders");renderOrders(d.orders)}catch(x){c.innerHTML='<div class="message">'+esc(x.message)+'</div>'}
+}
+async function searchOrder(){
+ const n=document.getElementById("orderSearchInput").value.trim();if(!n){loadOrders();return}
+ const c=document.getElementById("ordersContainer");c.innerHTML='<div class="message">Searching...</div>';
+ try{const d=await api("/api/orders/"+encodeURIComponent(n));renderOrders([d.order])}catch(x){c.innerHTML='<div class="message">'+esc(x.message)+'</div>'}
+}
+function clearSearch(){document.getElementById("orderSearchInput").value="";loadOrders()}
+function renderOrders(orders){
+ const c=document.getElementById("ordersContainer");if(!orders?.length){c.innerHTML='<div class="message">No orders found.</div>';return}
+ c.innerHTML='<div class="orders-grid">'+orders.map(o=>`<div class="order-card"><div class="order-top"><div><div class="order-number">${esc(o.order_number)}</div><div>${new Date(o.created_at).toLocaleString()}</div></div><div class="status">${esc(o.status)}</div></div><div class="order-info"><div><b>Customer:</b> ${esc(o.customer_first_name)} ${esc(o.customer_last_name)}</div><div><b>Email:</b> ${esc(o.customer_email)}</div><div><b>Phone:</b> ${esc(o.customer_phone)}</div><div><b>Shipping:</b> ${esc(o.shipping_method)}</div><div><b>Address:</b> ${esc(o.shipping_address)}</div><div><b>Subtotal:</b> ${o.subtotal} TL</div><div><b>Shipping:</b> ${o.shipping_cost} TL</div><div><b>Total:</b> ${o.total_amount} TL</div></div><div class="order-items">${(o.items||[]).map(i=>`<div class="order-item"><span>${esc(i.product_name)} (${esc(i.size)}) x${i.quantity}</span><span>${i.unit_price*i.quantity} TL</span></div>`).join("")}</div><div class="status-controls"><select id="status-${escJs(o.order_number)}"><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select><button class="main-btn" onclick="updateStatus('${escJs(o.order_number)}')">Update Status</button></div></div>`).join("")+'</div>';
+ orders.forEach(o=>{const s=document.getElementById("status-"+o.order_number);if(s)s.value=o.status})
+}
+async function updateStatus(n){const s=document.getElementById("status-"+n);if(!s)return;const status=s.value;if(status==="cancelled"&&!confirm("Cancel this order and return its items to stock?"))return;try{await api("/api/orders/"+encodeURIComponent(n)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});loadOrders()}catch(x){alert(x.message)}}
+
+function renderStockGrid(id,category,stock={}){
+ const g=document.getElementById(id);if(!g)return;g.innerHTML=sizesFor(category).map(s=>`<div class="fixed-stock-item"><label>${esc(s)}</label><input type="number" min="0" step="1" data-fixed-size="${esc(s)}" value="${Number.isInteger(Number(stock[s]))?Number(stock[s]):0}"></div>`).join("")
+}
+function readStock(id){const g=document.getElementById(id),o={};g.querySelectorAll("[data-fixed-size]").forEach(i=>{const n=Number(i.value);if(!Number.isInteger(n)||n<0)throw new Error("Invalid quantity for size "+i.dataset.fixedSize);o[i.dataset.fixedSize]=n});return o}
+function syncHidden(grid,hidden){document.getElementById(hidden).value=JSON.stringify(readStock(grid))}
+function previewFiles(inputId,containerId){
+ const files=[...(document.getElementById(inputId).files||[])],c=document.getElementById(containerId);c.innerHTML="";
+ files.forEach(f=>{const img=document.createElement("img");img.src=URL.createObjectURL(f);img.onload=()=>URL.revokeObjectURL(img.src);c.appendChild(img)})
+}
+async function uploadImages(files,msgEl){
+ const urls=[];for(let i=0;i<files.length;i++){msgEl.innerHTML=`<div class="message">Uploading image ${i+1} of ${files.length}...</div>`;const fd=new FormData();fd.append("image",files[i]);const d=await api("/api/admin/upload-image",{method:"POST",body:fd});urls.push(d.imageUrl)}return urls
+}
+function showAddProductForm(){document.getElementById("addProductForm").classList.remove("hidden");renderStockGrid("productStockGrid",document.getElementById("productCategory").value,{});document.getElementById("productName").focus()}
+function hideAddProductForm(){document.getElementById("addProductForm").classList.add("hidden");document.getElementById("productFormMessage").innerHTML=""}
+function resetAddForm(){document.getElementById("productId").value="";document.getElementById("productName").value="";document.getElementById("productPrice").value="";document.getElementById("productImage1").value="";document.getElementById("productImage2").value="";document.getElementById("productImagePreviewGrid").innerHTML="";document.getElementById("productCategory").value="hoodies";renderStockGrid("productStockGrid","hoodies",{});document.getElementById("productFormMessage").innerHTML=""}
+async function addProduct(){
+ const m=document.getElementById("productFormMessage"),category=document.getElementById("productCategory").value,name=document.getElementById("productName").value.trim(),price=Number(document.getElementById("productPrice").value);
+ const file1=document.getElementById("productImage1").files[0],file2=document.getElementById("productImage2").files[0],files=[file1,file2].filter(Boolean);
+ try{
+   const stock=readStock("productStockGrid");
+   if(!name||!file1||!Number.isInteger(price)||price<0)throw new Error("Complete the product fields and choose Image 1.");
+   const images=await uploadImages(files,m);
+   const created=await api("/api/products",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category,name,price,image:images[0],images,stock})});
+   document.getElementById("productId").value=created.product?.id||"";
+   m.innerHTML='<div class="success-message">Product created successfully.</div>';await loadProducts();setTimeout(()=>{hideAddProductForm();resetAddForm()},500)
+ }catch(x){m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>'}
+}
+async function loadProducts(){
+ const c=document.getElementById("productsContainer");c.innerHTML='<div class="message">Loading products...</div>';
+ try{const d=await api("/api/products");renderProducts(d.products)}catch(x){c.innerHTML='<div class="message">'+esc(x.message)+'</div>'}
+}
+function renderProducts(ps){
+ const c=document.getElementById("productsContainer");if(!ps?.length){c.innerHTML='<div class="message">No products found.</div>';return}
+ c.innerHTML='<div class="products-grid">'+ps.map(p=>{const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];return `<div class="product-card"><img class="product-image" src="${esc(imgs[0])}" alt="${esc(p.name)}" onerror="this.style.display='none'"><div class="product-gallery">${imgs.slice(0,6).map(u=>`<img src="${esc(u)}" alt="" onerror="this.style.display='none'">`).join("")}</div><h3>${esc(p.name)}</h3><div class="product-meta"><b>ID:</b> ${esc(p.id)}</div><div class="product-meta"><b>Category:</b> ${esc(p.category)}</div><div class="product-meta"><b>Price:</b> ${p.price} TL</div><div class="stock-list"><b>Stock</b>${Object.entries(p.stock||{}).map(([s,q])=>`<div class="stock-row"><span>${esc(s)}</span><strong>${q}</strong></div>`).join("")}</div><div class="button-row" style="margin-top:15px"><button class="main-btn" onclick="openEditProduct('${escJs(p.id)}')">Edit Product</button><button class="danger-btn" onclick="deleteProduct('${escJs(p.id)}','${escJs(p.name)}')">Delete Product</button></div></div>`}).join("")+'</div>'
+}
+async function openEditProduct(id){
+ try{const d=await api("/api/products/"+encodeURIComponent(id)),p=d.product;document.getElementById("editProductId").value=p.id;document.getElementById("editProductCategory").value=p.category;document.getElementById("editProductName").value=p.name;document.getElementById("editProductPrice").value=p.price;renderStockGrid("editProductStockGrid",p.category,p.stock||{});const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];document.getElementById("editProductCurrentImages").innerHTML=imgs.map(u=>`<img src="${esc(u)}" alt="">`).join("");document.getElementById("editProductImage1").value="";document.getElementById("editProductImage2").value="";document.getElementById("editProductFormMessage").innerHTML="";document.getElementById("editProductForm").classList.remove("hidden");document.getElementById("editProductForm").scrollIntoView({behavior:"smooth"})}catch(x){alert(x.message)}
+}
+function hideEditProductForm(){document.getElementById("editProductForm").classList.add("hidden")}
+async function updateProduct(){
+ const m=document.getElementById("editProductFormMessage");
+ try{
+   const id=document.getElementById("editProductId").value,category=document.getElementById("editProductCategory").value,name=document.getElementById("editProductName").value.trim(),price=Number(document.getElementById("editProductPrice").value),stock=readStock("editProductStockGrid");
+   const f1=document.getElementById("editProductImage1").files[0],f2=document.getElementById("editProductImage2").files[0];
+   if(!name||!Number.isInteger(price)||price<0)throw new Error("Complete the product fields correctly.");
+   let body={category,name,price,stock};
+   if(f1||f2){
+     const d=await api("/api/products/"+encodeURIComponent(id));
+     const current=Array.isArray(d.product.images)&&d.product.images.length?d.product.images:(d.product.image?[d.product.image]:[]);
+     const files=[],positions=[];
+     if(f1){files.push(f1);positions.push(0)}
+     if(f2){files.push(f2);positions.push(1)}
+     const uploaded=await uploadImages(files,m);
+     const images=current.slice(0,2);
+     positions.forEach((pos,i)=>{images[pos]=uploaded[i]});
+     body.image=images[0]||"";
+     body.images=images.filter(Boolean).slice(0,2);
+   }
+   await api("/api/products/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+   m.innerHTML='<div class="success-message">Product updated successfully.</div>';await loadProducts();setTimeout(hideEditProductForm,500)
+ }catch(x){m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>'}
+}
+async function deleteProduct(id,name){if(!confirm(`Are you sure you want to delete "${name}"?`))return;try{await api("/api/products/"+encodeURIComponent(id),{method:"DELETE"});loadProducts()}catch(x){alert(x.message)}}
+
+async function loadCustomers(){const c=document.getElementById("customersContainer");c.innerHTML='<div class="message">Loading customers...</div>';try{const d=await api("/api/admin/customers");c.innerHTML='<div class="table-card table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Date of Birth</th><th>Created</th></tr></thead><tbody>'+(d.customers||[]).map(x=>`<tr><td>${x.id}</td><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td>${esc(x.birth_date?String(x.birth_date).slice(0,10):"")}</td><td>${new Date(x.created_at).toLocaleString()}</td></tr>`).join("")+'</tbody></table></div>'}catch(x){c.innerHTML='<div class="message">'+esc(x.message)+'</div>'}}
+
+async function sendEmailToCustomers(){
+ const subject=document.getElementById("customerEmailSubject").value.trim();
+ const message=document.getElementById("customerEmailMessage").value.trim();
+ const status=document.getElementById("customerEmailMessageStatus");
+ const btn=document.getElementById("sendCustomersEmailBtn");
+ status.innerHTML="";
+ if(!subject||!message){status.innerHTML='<div class="error-message">Subject and message are required.</div>';return}
+ if(!confirm("Send this email to all registered STIŁUS customers?"))return;
+ btn.disabled=true;
+ btn.textContent="Sending...";
+ try{
+   const d=await api("/api/admin/customers/email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject,message})});
+   status.innerHTML='<div class="success-message">Email sent successfully to '+esc(d.sentCount||0)+' customer(s).</div>';
+   document.getElementById("customerEmailSubject").value="";
+   document.getElementById("customerEmailMessage").value="";
+ }catch(x){
+   status.innerHTML='<div class="error-message">'+esc(x.message)+'</div>';
+ }finally{
+   btn.disabled=false;
+   btn.textContent="Send Email to All Customers";
+ }
+}
+
+
+
+async function loadSitewideSale(){
+ const m=document.getElementById("sitewideSaleMessage");
+ try{
+   const d=await api("/api/admin/sitewide-sale");
+   const s=d.sale||{};
+   document.getElementById("sitewideSalePercentage").value=s.percentage??0;
+   document.getElementById("sitewideSaleStartsAt").value=isoLocal(s.starts_at);
+   document.getElementById("sitewideSaleExpiresAt").value=isoLocal(s.expires_at);
+   document.getElementById("sitewideSaleActive").checked=!!s.active;
+   if(m)m.innerHTML="";
+ }catch(x){
+   if(m)m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>';
+ }
+}
+async function saveSitewideSale(){
+ const m=document.getElementById("sitewideSaleMessage");
+ const percentage=Number(document.getElementById("sitewideSalePercentage").value||0);
+ if(!Number.isFinite(percentage)||percentage<0||percentage>100){
+   m.innerHTML='<div class="error-message">Discount percentage must be between 0 and 100.</div>';
+   return;
+ }
+ try{
+   await api("/api/admin/sitewide-sale",{
+     method:"PATCH",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({
+       percentage,
+       startsAt:document.getElementById("sitewideSaleStartsAt").value,
+       expiresAt:document.getElementById("sitewideSaleExpiresAt").value,
+       active:document.getElementById("sitewideSaleActive").checked
+     })
+   });
+   m.innerHTML='<div class="success-message">Sitewide sale saved successfully.</div>';
+   await loadSitewideSale();
+ }catch(x){
+   m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>';
+ }
+}
+
+function clearCouponForm(){["couponId","couponCode","couponValue","couponMaxDiscount","couponMinOrderAmount","couponProductIds","couponBuyQuantity","couponGetQuantity","couponUsageLimit","couponPerCustomerLimit","couponStartsAt","couponExpiresAt","couponCustomerEmail"].forEach(id=>document.getElementById(id).value="");document.getElementById("couponDiscountType").value="percentage";document.getElementById("couponAppliesTo").value="all";document.getElementById("couponCategory").value="";document.getElementById("couponFirstOrderOnly").checked=false;document.getElementById("couponActive").checked=true;document.getElementById("couponFormMessage").innerHTML=""}
+function showCouponForm(){clearCouponForm();document.getElementById("couponFormTitle").textContent="Add Discount Code";document.getElementById("couponForm").classList.remove("hidden")}
+function hideCouponForm(){document.getElementById("couponForm").classList.add("hidden")}
+function isoLocal(v){if(!v)return"";const d=new Date(v);const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`}
+function couponPayload(){return{code:document.getElementById("couponCode").value,discountType:document.getElementById("couponDiscountType").value,value:document.getElementById("couponValue").value,maxDiscount:document.getElementById("couponMaxDiscount").value,minOrderAmount:document.getElementById("couponMinOrderAmount").value,appliesTo:document.getElementById("couponAppliesTo").value,productIds:document.getElementById("couponProductIds").value.split(",").map(x=>x.trim()).filter(Boolean),category:document.getElementById("couponCategory").value,buyQuantity:document.getElementById("couponBuyQuantity").value,getQuantity:document.getElementById("couponGetQuantity").value,usageLimit:document.getElementById("couponUsageLimit").value,perCustomerLimit:document.getElementById("couponPerCustomerLimit").value,startsAt:document.getElementById("couponStartsAt").value,expiresAt:document.getElementById("couponExpiresAt").value,firstOrderOnly:document.getElementById("couponFirstOrderOnly").checked,customerEmail:document.getElementById("couponCustomerEmail").value,active:document.getElementById("couponActive").checked}}
+async function saveCoupon(){const m=document.getElementById("couponFormMessage");try{const id=document.getElementById("couponId").value,p=couponPayload();await api(id?"/api/admin/coupons/"+id:"/api/admin/coupons",{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});m.innerHTML='<div class="success-message">Discount code saved successfully.</div>';await loadCoupons();setTimeout(hideCouponForm,500)}catch(x){m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>'}}
+function fillCoupon(x){document.getElementById("couponId").value=x.id;document.getElementById("couponCode").value=x.code||"";document.getElementById("couponDiscountType").value=x.discount_type||"percentage";document.getElementById("couponValue").value=x.value??0;document.getElementById("couponMaxDiscount").value=x.max_discount??"";document.getElementById("couponMinOrderAmount").value=x.min_order_amount??0;document.getElementById("couponAppliesTo").value=x.applies_to||"all";document.getElementById("couponProductIds").value=Array.isArray(x.product_ids)?x.product_ids.join(", "):"";document.getElementById("couponCategory").value=x.category||"";document.getElementById("couponBuyQuantity").value=x.buy_quantity??"";document.getElementById("couponGetQuantity").value=x.get_quantity??"";document.getElementById("couponUsageLimit").value=x.usage_limit??"";document.getElementById("couponPerCustomerLimit").value=x.per_customer_limit??"";document.getElementById("couponStartsAt").value=isoLocal(x.starts_at);document.getElementById("couponExpiresAt").value=isoLocal(x.expires_at);document.getElementById("couponCustomerEmail").value=x.customer_email||"";document.getElementById("couponFirstOrderOnly").checked=!!x.first_order_only;document.getElementById("couponActive").checked=!!x.active;document.getElementById("couponFormTitle").textContent="Edit Discount Code";document.getElementById("couponForm").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})}
+async function loadCoupons(){const c=document.getElementById("couponsContainer");c.innerHTML='<div class="message">Loading discount codes...</div>';try{const d=await api("/api/admin/coupons");c.innerHTML='<div class="table-card table-wrap"><table><thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Applies To</th><th>Active</th><th>Actions</th></tr></thead><tbody>'+(d.coupons||[]).map(x=>`<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.discount_type)}</td><td>${x.value}</td><td>${esc(x.applies_to)}${x.category?" / "+esc(x.category):""}</td><td><span class="badge">${x.active?"Active":"Inactive"}</span></td><td><button class="main-btn" onclick='fillCoupon(${JSON.stringify(x).replaceAll("'","&#039;")})'>Edit</button> <button class="danger-btn" onclick="deleteCoupon(${x.id})">Delete</button></td></tr>`).join("")+'</tbody></table></div>'}catch(x){c.innerHTML='<div class="message">'+esc(x.message)+'</div>'}}
+async function deleteCoupon(id){if(!confirm("Delete this discount code?"))return;try{await api("/api/admin/coupons/"+id,{method:"DELETE"});loadCoupons()}catch(x){alert(x.message)}}
+function updateCouponTypeFields(){}
+
+async function loadSettings(){const m=document.getElementById("settingsMessage");try{const d=await api("/api/admin/store-settings"),s=d.settings||{};document.getElementById("storeName").value="STIŁUS";document.getElementById("storeCurrency").value=s.currency||"TL";document.getElementById("standardShipping").value=s.standard_shipping??0;document.getElementById("expressShipping").value=s.express_shipping??0;document.getElementById("freeShippingThreshold").value=s.free_shipping_threshold??0;document.getElementById("contactEmail").value=s.contact_email||"";document.getElementById("contactPhone").value=s.contact_phone||"";document.getElementById("maintenanceMode").checked=!!s.maintenance_mode;document.getElementById("internationalShipping").value=s.international_shipping??0;m.innerHTML=""}catch(x){m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>'}}
+async function saveSettings(){const m=document.getElementById("settingsMessage");try{await api("/api/admin/store-settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({storeName:"STIŁUS",currency:document.getElementById("storeCurrency").value,standardShipping:document.getElementById("standardShipping").value,expressShipping:document.getElementById("expressShipping").value,freeShippingThreshold:document.getElementById("freeShippingThreshold").value,contactEmail:document.getElementById("contactEmail").value,contactPhone:document.getElementById("contactPhone").value,maintenanceMode:document.getElementById("maintenanceMode").checked,internationalShipping:document.getElementById("internationalShipping").value})});m.innerHTML='<div class="success-message">Store settings saved successfully.</div>'}catch(x){m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>'}}
+
+async function loadReport(){
+ const c=document.getElementById("reportContainer"),month=document.getElementById("reportMonth").value;
+ if(!month){c.innerHTML='<div class="message">Choose a month.</div>';return}
+ c.innerHTML='<div class="message">Generating report...</div>';
+ try{
+  const d=await api("/api/admin/monthly-report?month="+encodeURIComponent(month)),s=d.summary||{};
+  const orders=d.orders||[];
+  c.innerHTML=`
+   <div class="report-grid">
+    <div class="metric">Orders<strong>${s.total_orders??0}</strong></div>
+    <div class="metric">Active / Completed<strong>${s.completed_or_active_orders??0}</strong></div>
+    <div class="metric">Subtotal<strong>${s.total_subtotal??0} TL</strong></div>
+    <div class="metric">Discounts<strong>${s.total_discounts??0} TL</strong></div>
+    <div class="metric">Shipping<strong>${s.total_shipping??0} TL</strong></div>
+    <div class="metric">Total Sales<strong>${s.total_sales??0} TL</strong></div>
+   </div>
+   <div class="table-card">
+    <h3>Orders</h3>
+    <div class="table-wrap"><table>
+     <thead><tr><th>Order</th><th>Customer</th><th>Subtotal</th><th>Discount</th><th>Shipping</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+     <tbody>${orders.length?orders.map(o=>`<tr><td>${esc(o.order_number)}</td><td>${esc(o.customer_first_name)} ${esc(o.customer_last_name)}</td><td>${o.subtotal??0} TL</td><td>${o.discount_amount??0} TL</td><td>${o.shipping_cost??0} TL</td><td>${o.total_amount??0} TL</td><td>${esc(o.status)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`).join(""):'<tr><td colspan="8">No orders for this month.</td></tr>'}</tbody>
+    </table></div>
+   </div>
+   <div class="grid">
+    <div class="table-card"><h3>Top Products</h3><div class="table-wrap"><table><thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead><tbody>${(d.topProducts||[]).map(x=>`<tr><td>${esc(x.product_name)}</td><td>${x.quantity_sold}</td><td>${x.revenue} TL</td></tr>`).join("")}</tbody></table></div></div>
+    <div class="table-card"><h3>Order Statuses</h3><div class="table-wrap"><table><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>${(d.orderStatuses||[]).map(x=>`<tr><td>${esc(x.status)}</td><td>${x.count}</td></tr>`).join("")}</tbody></table></div></div>
+   </div>`;
+ }catch(x){c.innerHTML='<div class="message">'+esc(x.message)+'</div>'}
+}
+
+async function loadHomepageBanner(){
+ const preview=document.getElementById("homepageBannerPreview");
+ if(!preview)return;
+ try{
+  const d=await api("/api/admin/store-settings"),s=d.settings||{};
+  preview.innerHTML=s.banner_url?`<img src="${esc(s.banner_url)}" alt="Homepage Banner">`:"";
+ }catch(x){
+  document.getElementById("homepageBannerMessage").innerHTML='<div class="error-message">'+esc(x.message)+'</div>';
+ }
+}
+
+async function saveHomepageBanner(){
+ const input=document.getElementById("homepageBannerFile");
+ const file=input.files[0];
+ const m=document.getElementById("homepageBannerMessage");
+ const btn=document.getElementById("saveHomepageBannerBtn");
+ m.innerHTML="";
+ if(!file){m.innerHTML='<div class="error-message">Choose a banner image or GIF.</div>';return}
+ btn.disabled=true;
+ btn.textContent="Saving...";
+ try{
+  const uploaded=await uploadImages([file],m);
+  await api("/api/admin/store-banner",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({bannerUrl:uploaded[0]})});
+  m.innerHTML='<div class="success-message">Homepage banner saved successfully.</div>';
+  input.value="";
+  await loadHomepageBanner();
+ }catch(x){
+  m.innerHTML='<div class="error-message">'+esc(x.message)+'</div>';
+ }finally{
+  btn.disabled=false;
+  btn.textContent="Save Banner";
+ }
+}
+
+
+document.getElementById("adminPassword").addEventListener("keydown",e=>{if(e.key==="Enter")loginAdmin()});
+document.getElementById("orderSearchInput").addEventListener("keydown",e=>{if(e.key==="Enter")searchOrder()});
+document.getElementById("productCategory").addEventListener("change",e=>renderStockGrid("productStockGrid",e.target.value,{}));
+document.getElementById("editProductCategory").addEventListener("change",e=>renderStockGrid("editProductStockGrid",e.target.value,{}));
+document.getElementById("productImages").addEventListener("change",()=>previewFiles("productImages","productImagePreviewGrid"));
+checkSession();
+renderStockGrid("productStockGrid","hoodies",{});
+</script>
+<script>
+document.addEventListener("change",function(e){
+ if(e.target.id==="homepageBannerFile"){
+   const wrap=document.getElementById("homepageBannerPreview");
+   const file=e.target.files[0];
+   if(wrap&&file){
+     const img=document.createElement("img");
+     img.src=URL.createObjectURL(file);
+     img.onload=()=>URL.revokeObjectURL(img.src);
+     wrap.innerHTML="";
+     wrap.appendChild(img);
+   }
+ }
+ if(e.target.id==="productImage1"||e.target.id==="productImage2"){
+   const wrap=document.getElementById("productImagePreviewGrid"); if(!wrap)return;
+   const files=[document.getElementById("productImage1").files[0],document.getElementById("productImage2").files[0]].filter(Boolean);
+   wrap.innerHTML=files.map(f=>{const u=URL.createObjectURL(f);return `<img src="${u}" alt="">`}).join("");
+ }
+});
+</script>
+</body>
+</html>

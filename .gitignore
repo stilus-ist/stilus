@@ -1,0 +1,8 @@
+.env
+**/.env
+node_modules/
+**/node_modules/
+uploads/
+**/uploads/
+.stilus_store_settings.json
+**/.stilus_admin_sessions.json

@@ -1,0 +1,2939 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STIŁUS | Modern Streetwear</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --main-dark: #000000;
+            --chrome-border: #e4e4e7;
+            --text-muted: #71717a;
+            --green-accent: #16a34a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--main-dark);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* --- Header Styles --- */
+        .stilus-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--chrome-border);
+            padding: 10px 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0;
+        }
+        .menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background-color: var(--main-dark);
+        }
+
+        .logo { 
+            font-family: 'Archivo', sans-serif;
+            font-weight: 900;
+            font-size: 20px; 
+            letter-spacing: 1px; 
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .header-search {
+            flex: 0 1 220px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .header-search input {
+            width: 100%;
+            height: 36px;
+            padding: 0 12px;
+            padding-right: 32px;
+            background-color: #f4f4f5;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-size: 11px;
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.2s;
+        }
+        .header-search input:focus {
+            background-color: #fff;
+            border-color: var(--main-dark);
+        }
+        .search-icon-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 36px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            background: #f4f4f5;
+            padding: 0 14px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .action-item:hover { background: #e4e4e7; }
+        
+        .cart-badge {
+            background-color: var(--main-dark);
+            color: #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 9px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+        }
+
+        /* --- Navigation Bar --- */
+        .stilus-nav-bar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--chrome-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 2%;
+            position: sticky;
+            top: 57px;
+            z-index: 900;
+            overflow-x: auto;
+        }
+        .nav-cat-link {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            color: var(--text-muted);
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        .nav-cat-link:hover, .nav-cat-link.active { color: var(--main-dark); }
+
+        /* --- Cart: compact half-screen drawer inside the Index --- */
+        .cart-dropdown {
+            position: fixed;
+            top: 0;
+            right: -52vw;
+            left: auto;
+            width: 50vw;
+            height: 100vh;
+            background-color: #ffffff;
+            border-left: 2px solid var(--main-dark);
+            box-shadow: -15px 0 35px rgba(0,0,0,0.12);
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 2500;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 22px 24px;
+        }
+        .cart-dropdown.open { right: 0; }
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--chrome-border);
+            padding-bottom: 12px;
+            flex: 0 0 auto;
+        }
+        .cart-header h3 { margin: 0; font-size: 15px; text-transform: uppercase; font-weight: 900; }
+        .close-cart { background: none; border: none; font-size: 22px; cursor: pointer; line-height: 1; padding: 4px; }
+        .cart-content-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            min-height: 0;
+            gap: 18px;
+        }
+        .cart-items-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 18px 2px;
+        }
+        .cart-empty-msg { color: var(--text-muted); font-size: 12px; margin: auto; }
+        .cart-item-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            border: 1px solid var(--chrome-border);
+            padding: 10px 12px;
+            border-radius: 5px;
+            background: #fafafa;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .cart-item-img { width: 54px; height: 54px; object-fit: cover; border-radius: 3px; flex: 0 0 auto; }
+        .cart-item-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .cart-item-name { font-size: 12px; font-weight: 700; }
+        .cart-item-price { font-size: 11px; color: var(--text-muted); }
+        .cart-item-remove {
+            margin-left: auto;
+            border: 0;
+            background: transparent;
+            color: var(--main-dark);
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 6px;
+        }
+        .cart-item-remove:hover { opacity: 0.55; }
+        .cart-actions-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 0 0 auto;
+            border-top: 1px solid var(--chrome-border);
+            padding-top: 14px;
+        }
+        .cart-total-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .cart-total-price {
+            font-size: 14px;
+            font-weight: 900;
+        }
+        .cart-btn-checkout {
+            width: 100%;
+            padding: 12px 18px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            background-color: var(--main-dark);
+            color: #fff;
+        }
+
+        @media (max-width: 700px) {
+            .cart-dropdown {
+                width: 88vw;
+                right: -90vw;
+                padding: 18px;
+            }
+            .cart-dropdown.open { right: 0; }
+        }
+
+        /* --- Views Management --- */
+        .view-section { display: none; flex: 1; }
+        .view-section.active { display: block; }
+
+        .cart-review-page { padding: 30px 4%; }
+        .continue-btn {
+            background-color: var(--main-dark);
+            color: #fff;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 20px 0 30px 0;
+        }
+        .recommendation-title {
+            font-size: 15px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 30px 0 15px 0;
+            border-bottom: 2px solid var(--main-dark);
+            padding-bottom: 8px;
+        }
+
+        /* --- Product Details Page --- */
+        .product-detail-page {
+            padding: 30px 4%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .detail-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        @media(min-width: 768px) {
+            .detail-wrapper {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+        }
+        .detail-img-box {
+            flex: 1;
+            background: #f4f4f5;
+            border: 1px solid var(--chrome-border);
+            border-radius: 6px;
+            overflow: hidden;
+            max-height: 500px;
+        }
+        .detail-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .detail-info-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .detail-title {
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .detail-price {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-muted);
+        }
+        .detail-back-btn {
+            background: none;
+            border: 1px solid var(--chrome-border);
+            padding: 8px 16px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- Checkout Page --- */
+        .checkout-page { padding: 30px 4%; max-width: 700px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        .checkout-title { font-size: 18px; font-weight: 900; text-transform: uppercase; margin-bottom: 20px; border-bottom: 2px solid var(--main-dark); padding-bottom: 10px; }
+        .checkout-summary-box { background: #fafafa; border: 1px solid var(--chrome-border); border-radius: 6px; padding: 15px; margin-bottom: 20px; }
+        .checkout-summary-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+        .mini-items-list { display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; margin-bottom: 10px; }
+        .mini-item-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .mini-item-left { display: flex; align-items: center; gap: 8px; }
+        .mini-item-img { width: 30px; height: 30px; object-fit: cover; border-radius: 2px; }
+        .mini-item-name { font-size: 11px; font-weight: 700; }
+        .mini-item-price { font-size: 11px; font-weight: 800; color: var(--text-muted); }
+        
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 11px; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid #eee; }
+        .checkout-total-row { display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--main-dark); padding-top: 10px; margin-top: 6px; font-size: 12px; font-weight: 900; color: var(--main-dark); }
+        
+        .free-shipping-badge { color: var(--green-accent); font-weight: 800; }
+        .shipping-green-note { color: var(--green-accent); font-weight: 800; font-size: 10px; margin-left: 4px; }
+
+        .checkout-form-group { margin-bottom: 14px; }
+        .checkout-form-group label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); }
+        .checkout-form-group input { width: 100%; padding: 10px; border: 1px solid var(--chrome-border); border-radius: 4px; font-size: 12px; outline: none; box-sizing: border-box; }
+        .checkout-form-group select { width: 100%; padding: 10px; border: 1px solid var(--chrome-border); border-radius: 4px; font-size: 12px; outline: none; box-sizing: border-box; background: #fff; }
+        
+        .shipping-options-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .shipping-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--chrome-border);
+            padding: 10px 12px;
+            border-radius: 4px;
+            background: #fafafa;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .shipping-option input { cursor: pointer; }
+
+        .checkout-row { display: flex; gap: 10px; }
+        .checkout-row .checkout-form-group { flex: 1; }
+        .place-order-btn { background-color: var(--main-dark); color: #fff; border: none; width: 100%; padding: 14px; font-size: 11px; font-weight: 900; text-transform: uppercase; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+
+        /* --- Contact Us Page --- */
+        .contact-page { padding: 40px 4%; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; text-align: center; }
+        .contact-title { font-size: 20px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+        .contact-subtitle { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 30px; font-weight: 700; letter-spacing: 1px; }
+        .contact-form { text-align: left; }
+        .contact-textarea { width: 100%; padding: 10px; border: 1px solid var(--chrome-border); border-radius: 4px; font-size: 12px; outline: none; box-sizing: border-box; height: 100px; resize: none; margin-bottom: 15px; }
+
+        /* --- Account / Register & Log In --- */
+        .account-page {
+            padding: 60px 4%;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .account-page .contact-title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .account-page .contact-subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .account-form {
+            text-align: left;
+        }
+        .account-form .checkout-form-group {
+            margin-bottom: 16px;
+        }
+        .account-form .checkout-form-group input {
+            height: 48px;
+            padding: 0 14px;
+            font-size: 13px;
+        }
+        .account-main-btn {
+            width: 100%;
+            height: 48px;
+            border: none;
+            border-radius: 4px;
+            background: var(--main-dark);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .account-create-btn {
+            width: 100%;
+            height: 48px;
+            border: 1px solid var(--chrome-border);
+            border-radius: 4px;
+            background: #f4f4f5;
+            color: var(--main-dark);
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .account-divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 28px 0 0;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .account-divider::before,
+        .account-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--chrome-border);
+        }
+        .account-switch-note {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .account-switch-link {
+            border: 0;
+            background: transparent;
+            padding: 0;
+            margin-left: 4px;
+            font: inherit;
+            color: var(--main-dark);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* --- Success Page --- */
+        .success-page { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; max-width: 500px; margin: 0 auto; flex: 1; }
+        .success-icon { font-size: 40px; margin-bottom: 15px; }
+        .success-title { font-size: 20px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+        .success-msg { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 25px; font-weight: 600; text-transform: uppercase; }
+        .email-sent-badge { background: #f4f4f5; border: 1px solid var(--chrome-border); padding: 12px; border-radius: 6px; font-size: 11px; margin-bottom: 20px; width: 100%; box-sizing: border-box; font-weight: 700; }
+        .back-home-btn { background-color: var(--main-dark); color: #fff; border: none; padding: 12px 25px; font-size: 11px; font-weight: 800; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
+
+        /* --- Hero Banner --- */
+        .stilus-hero { 
+            position: relative; 
+            background: #000000; 
+            height: 400px; 
+            overflow: hidden; 
+            border-bottom: 1px solid var(--chrome-border); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .stilus-hero.hidden { display: none; }
+
+        .hero-gif-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+        }
+
+        .hero-content { 
+            position: relative; 
+            z-index: 2; 
+            text-align: center; 
+        }
+
+        .banner-shop-all-btn { 
+            background-color: #ffffff; 
+            color: #000000; 
+            border: none; 
+            padding: 12px 28px; 
+            font-size: 11px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+            transition: 0.2s;
+        }
+        .banner-shop-all-btn:hover { background-color: #f4f4f5; }
+
+        /* --- Sidebar --- */
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background-color: #fff; border-right: 1px solid var(--chrome-border); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 2000; padding: 30px 20px; box-sizing: border-box; }
+        .sidebar.open { left: 0; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .close-btn { background: none; border: none; font-size: 18px; cursor: pointer; }
+        .sidebar-links { display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-links a { font-size: 13px; font-weight: 800; text-transform: uppercase; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        .sidebar-links a:hover { color: var(--main-dark); }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); backdrop-filter: blur(2px); display: none; z-index: 1500; }
+        .overlay.active { display: block; }
+
+        /* --- Main & Grid --- */
+        .main-container { padding: 25px 3%; }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 16px;
+            background-color: var(--main-dark);
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        @media(min-width: 768px) {
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 20px;
+            }
+            .stilus-hero { height: 480px; }
+        }
+
+        .product-card {
+            background: #fff;
+            border: 1px solid var(--chrome-border);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-img-container { 
+            width: 100%; 
+            height: 170px; 
+            background: #f4f4f5; 
+            overflow: hidden; 
+            cursor: pointer;
+        }
+        @media(min-width: 768px) { .card-img-container { height: 300px; } }
+
+        .card-img-container { position: relative; }
+
+        .card-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Clean image navigation: arrows only, no circles or borders. */
+        .image-nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--main-dark);
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1;
+            padding: 4px;
+            margin: 0;
+            cursor: pointer;
+            opacity: 0.82;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.85);
+            transition: opacity 0.18s, transform 0.18s;
+        }
+
+        .image-nav-arrow:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .image-nav-arrow.prev { left: 5px; }
+        .image-nav-arrow.next { right: 5px; }
+
+        .detail-img-box {
+            position: relative;
+        }
+
+        .detail-img-box .image-nav-arrow {
+            font-size: 26px;
+        }
+
+        .card-body { padding: 10px; display: flex; flex-direction: column; flex: 1; }
+        .card-title { font-size: 11px; font-weight: 800; color: var(--main-dark); margin: 0 0 4px; text-transform: uppercase; cursor: pointer; }
+        .card-price { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; }
+        .product-price-wrap { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
+        .product-price-before { color:var(--text-muted); text-decoration:line-through; font-size:10px; font-weight:700; }
+        .product-price-after { color:var(--main-dark); font-size:12px; font-weight:900; }
+        .sale-badge { display:inline-block; border:1px solid var(--main-dark); padding:2px 5px; font-size:8px; font-weight:900; text-transform:uppercase; }
+
+        .size-selector { margin-bottom: 10px; }
+        .size-label { font-size: 9px; font-weight: 800; color: var(--text-muted); margin-bottom: 4px; display: block; text-transform: uppercase; }
+        .sizes { display: flex; gap: 4px; flex-wrap: wrap; }
+        
+        .size-btn {
+            border: 1px solid var(--chrome-border);
+            background: #fff;
+            color: var(--main-dark);
+            padding: 3px 6px;
+            font-size: 9px;
+            font-weight: 800;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .size-btn.active { background-color: var(--main-dark); color: #fff; border-color: var(--main-dark); }
+        .size-btn.out-of-stock {
+            background-color: #f4f4f5;
+            color: #a1a1aa;
+            border-color: #e4e4e7;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            position: relative;
+        }
+        .size-btn.out-of-stock::after {
+            content: ' ✕';
+            font-size: 8px;
+            color: #ef4444;
+        }
+
+        .add-to-cart-btn {
+            background: var(--main-dark);
+            color: #fff;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 800;
+            margin-top: auto;
+            text-transform: uppercase;
+        }
+
+        /* --- Footer & Language Selector --- */
+        .footer {
+            background: #f4f4f5;
+            color: var(--text-muted);
+            padding: 20px 4%;
+            border-top: 1px solid var(--chrome-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-top: auto;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .footer-right-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            font-size: 16px;
+        }
+        .social-icons a { color: var(--main-dark); transition: 0.2s; }
+        .social-icons a:hover { color: var(--text-muted); }
+    .checkout-cart-item,.cart-review-item{position:relative}
+.checkout-item-remove{border:0;background:transparent;color:#111;font-size:20px;font-weight:700;line-height:1;padding:2px 5px;cursor:pointer;margin-left:8px;flex:0 0 auto}
+.checkout-item-remove:hover{opacity:.55}
+.review-remove{position:absolute;top:7px;right:7px;z-index:10;margin:0;font-size:22px}
+
+        .checkout-coupon-row{display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--chrome-border)}
+        .checkout-coupon-row input{flex:1;min-width:0;box-sizing:border-box;padding:11px 12px;border:1px solid var(--chrome-border);background:#fff;font-size:12px;outline:none}
+        .checkout-coupon-row input:focus{border-color:var(--main-dark)}
+        .checkout-coupon-row button{border:0;background:var(--main-dark);color:#fff;padding:11px 16px;font-size:11px;font-weight:800;text-transform:uppercase;cursor:pointer}
+        .checkout-coupon-message{min-height:16px;margin-top:5px;font-size:10px;font-weight:700}
+
+
+        .sidebar-utility-links {
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid var(--chrome-border);
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .sidebar-utility-links a {
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            color: var(--text-muted) !important;
+            text-transform: uppercase;
+            cursor: pointer;
+            line-height: 1.2;
+            transition: .2s;
+        }
+        .sidebar-utility-links a:hover {
+            color: var(--main-dark) !important;
+        }
+        .sidebar-account-link {
+            color: var(--main-dark) !important;
+            font-weight: 800 !important;
+        }
+
+
+        .language-switch-banner{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:3500;display:flex;align-items:center;gap:6px;padding:6px;background:rgba(255,255,255,.96);border:1px solid var(--chrome-border);box-shadow:0 10px 30px rgba(0,0,0,.12);backdrop-filter:blur(12px);border-radius:999px}
+        .language-switch-banner button{border:0;background:transparent;color:var(--text-muted);font:inherit;font-size:11px;font-weight:900;letter-spacing:.5px;padding:9px 14px;border-radius:999px;cursor:pointer}
+        .language-switch-banner button.active{background:var(--main-dark);color:#fff}
+
+</style>
+</head>
+<body>
+
+    <div class="cart-dropdown" id="cartDropdown">
+        <div class="cart-header">
+            <h3 data-translate="bagTitle">Shopping Bag</h3>
+            <button class="close-cart" onclick="toggleCart()">✕</button>
+        </div>
+        <div class="cart-content-area">
+            <div class="cart-items-container" id="cartItemsContainer">
+                <span class="cart-empty-msg" data-translate="emptyCart">Your cart is currently empty.</span>
+            </div>
+            <div class="cart-actions-footer">
+                <div class="cart-total-row">
+                    <span>Total</span>
+                    <span class="cart-total-price" id="cartTotalPrice">0 TL</span>
+                </div>
+                <button class="cart-btn-checkout" onclick="changeView('cart-review', true)" data-translate="checkoutBtn">Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="stilus-header">
+        <div class="header-left">
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="logo" onclick="changeView('home', true)">STIŁUS</div>
+        </div>
+        
+        <div class="header-search">
+            <input type="text" id="searchInput" placeholder="Search..." data-translate-placeholder="searchPlaceholder" onkeyup="searchProducts()">
+            <button class="search-icon-btn">🔍</button>
+        </div>
+
+        <div class="header-actions">
+            <div class="action-item" onclick="toggleCart()">
+                🛒 <span data-translate="bagNav">Bag</span> <span class="cart-badge" id="cartCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="stilus-nav-bar">
+        <span class="nav-cat-link" onclick="filterCategory('hoodies', this)" data-translate="catHoodies">Hoodies</span>
+        <span class="nav-cat-link" onclick="filterCategory('tshirts', this)" data-translate="catTshirts">T-Shirts</span>
+        <span class="nav-cat-link" onclick="filterCategory('pants', this)" data-translate="catPants">Pants</span>
+        <span class="nav-cat-link" onclick="filterCategory('shorts', this)" data-translate="catShorts">Shorts</span>
+        <span class="nav-cat-link" onclick="filterCategory('accessories', this)" data-translate="catAccessories">Accessories</span>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo" style="font-size: 18px;" onclick="changeView('home', true); toggleSidebar();">STIŁUS</div>
+            <button class="close-btn" onclick="toggleSidebar()">✕</button>
+        </div>
+        <div class="sidebar-links">
+            <a onclick="changeView('home', true); toggleSidebar();" data-translate="sidebarHome">Home (Featured)</a>
+            <a onclick="filterCategory('hoodies', null); toggleSidebar();" data-translate="catHoodies">Hoodies</a>
+            <a onclick="filterCategory('tshirts', null); toggleSidebar();" data-translate="catTshirts">T-Shirts</a>
+            <a onclick="filterCategory('pants', null); toggleSidebar();" data-translate="catPants">Pants</a>
+            <a onclick="filterCategory('shorts', null); toggleSidebar();" data-translate="catShorts">Shorts</a>
+            <a onclick="filterCategory('accessories', null); toggleSidebar();" data-translate="catAccessories">Accessories</a>
+            <div class="sidebar-utility-links">
+                <a onclick="changeView('order-status', true); toggleSidebar();">Order Status</a>
+                <a onclick="changeView('returns', true); toggleSidebar();" data-translate="sidebarReturns">Returns & Refunds</a>
+                <a onclick="changeView('contact', true); toggleSidebar();" data-translate="sidebarContact">Contact Us</a>
+                <a onclick="changeView('terms', true); toggleSidebar();" data-translate="sidebarTerms">Terms & Conditions</a>
+                <a id="sidebarAccountLink" onclick="changeView('account', true); toggleSidebar();" class="sidebar-account-link" data-translate="sidebarAccount">Register / Log In</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <section class="stilus-hero" id="heroBanner">
+        <img src="banner.gif" alt="Fullscreen Streetwear GIF" class="hero-gif-bg" id="homepageBannerImage">
+        <div class="hero-content">
+            <button class="banner-shop-all-btn" onclick="showShopAll()" data-translate="shopAllBtn">Shop All</button>
+        </div>
+    </section>
+
+    <div id="homeView" class="view-section active">
+        <main class="main-container">
+            <h2 class="section-title" id="sectionTitle" data-translate="featuredTitle">Featured Collection</h2>
+            <div class="product-grid" id="productGrid"></div>
+        </main>
+    </div>
+
+    <div id="productDetailView" class="view-section">
+        <div class="product-detail-page">
+            <button class="detail-back-btn" onclick="history.back()">← Back</button>
+            <div class="detail-wrapper" id="detailContentContainer"></div>
+
+            <h3 class="recommendation-title" data-translate="youMayLikeTitle">You Also May Like</h3>
+            <div class="product-grid" id="detailRecommendationGrid"></div>
+        </div>
+    </div>
+
+    <div id="cartReviewView" class="view-section">
+        <div class="cart-review-page">
+            <h2 class="section-title" data-translate="reviewBagTitle">Review Your Bag</h2>
+            <div class="product-grid" id="reviewCartGrid"></div>
+
+            <button class="continue-btn" onclick="changeView('checkout', true)" data-translate="continueBtn">Continue</button>
+
+            <h3 class="recommendation-title" data-translate="youMayLikeTitle">You Also May Like</h3>
+            <div class="product-grid" id="recommendationGrid"></div>
+        </div>
+    </div>
+
+    <div id="checkoutView" class="view-section">
+        <div class="checkout-page">
+            <h2 class="checkout-title" data-translate="secureCheckoutTitle">Secure Checkout</h2>
+
+            <div class="checkout-summary-box">
+                <div class="checkout-summary-title" data-translate="orderSummaryTitle">Order Summary</div>
+                <div class="mini-items-list" id="checkoutMiniItems"></div>
+                
+                <div class="summary-row">
+                    <span data-translate="shippingSummaryLabel">Shipping:</span>
+                    <span id="summaryShippingPrice">150 TL</span>
+                </div>
+
+                <div class="summary-row hidden" id="couponDiscountSummaryRow">
+                    <span>Discount:</span>
+                    <span id="couponDiscountSummaryPrice">0 TL</span>
+                </div>
+
+                <div class="checkout-total-row">
+                    <span data-translate="totalAmountLabel">Total Amount:</span>
+                    <span id="checkoutTotalPrice">0 TL</span>
+                </div>
+                        <div class="checkout-coupon-row">
+                            <input type="text" id="checkoutCouponCode" placeholder="Discount Code" autocomplete="off">
+                            <button type="button" id="applyCouponBtn" onclick="applyCheckoutCoupon()">Apply</button>
+                        </div>
+                        <div id="checkoutCouponMessage" class="checkout-coupon-message"></div>
+            </div>
+
+            <!-- Checkout Form -->
+            <form id="checkoutForm" onsubmit="handleFormSubmit(event)">
+
+                <div class="checkout-row">
+                    <div class="checkout-form-group">
+                        <label data-translate="firstNameLabel">First Name</label>
+                        <input type="text" name="First Name" id="firstNameInput" placeholder="First Name" required>
+                    </div>
+                    <div class="checkout-form-group">
+                        <label data-translate="lastNameLabel">Last Name</label>
+                        <input type="text" name="Last Name" id="lastNameInput" placeholder="Last Name" required>
+                    </div>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label data-translate="emailLabel">Email Address</label>
+                    <input type="email" name="Customer Email" id="customerEmailInput" placeholder="name@example.com" required>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label data-translate="phoneLabel">Phone Number</label>
+                    <input type="tel" name="Phone" id="customerPhoneInput" placeholder="+90 (500) 000 00 00" required>
+                </div>
+
+                <div class="checkout-form-group" id="savedAddressCheckoutGroup" style="display:none;">
+                    <label>Saved Address</label>
+                    <select id="savedAddressCheckoutSelect" onchange="applyCheckoutSavedAddress()">
+                        <option value="other">Other Address</option>
+                    </select>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label data-translate="addressLabel">Full Address</label>
+                    <input type="text" name="Address" id="customerAddressInput" placeholder="Enter your full address" required>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label for="countrySelect">Country</label>
+                    <select name="Country" id="countrySelect" required onchange="updateShippingOptionsByCountry()">
+                        <option value="Turkey" selected>Turkey</option>
+                        <optgroup label="Europe">
+                            <option value="Albania">Albania</option>
+                            <option value="Andorra">Andorra</option>
+                            <option value="Austria">Austria</option>
+                            <option value="Belarus">Belarus</option>
+                            <option value="Belgium">Belgium</option>
+                            <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+                            <option value="Bulgaria">Bulgaria</option>
+                            <option value="Croatia">Croatia</option>
+                            <option value="Cyprus">Cyprus</option>
+                            <option value="Czechia">Czechia</option>
+                            <option value="Denmark">Denmark</option>
+                            <option value="Estonia">Estonia</option>
+                            <option value="Finland">Finland</option>
+                            <option value="France">France</option>
+                            <option value="Germany">Germany</option>
+                            <option value="Greece">Greece</option>
+                            <option value="Hungary">Hungary</option>
+                            <option value="Iceland">Iceland</option>
+                            <option value="Ireland">Ireland</option>
+                            <option value="Italy">Italy</option>
+                            <option value="Kosovo">Kosovo</option>
+                            <option value="Latvia">Latvia</option>
+                            <option value="Liechtenstein">Liechtenstein</option>
+                            <option value="Lithuania">Lithuania</option>
+                            <option value="Luxembourg">Luxembourg</option>
+                            <option value="Malta">Malta</option>
+                            <option value="Moldova">Moldova</option>
+                            <option value="Monaco">Monaco</option>
+                            <option value="Montenegro">Montenegro</option>
+                            <option value="Netherlands">Netherlands</option>
+                            <option value="North Macedonia">North Macedonia</option>
+                            <option value="Norway">Norway</option>
+                            <option value="Poland">Poland</option>
+                            <option value="Portugal">Portugal</option>
+                            <option value="Romania">Romania</option>
+                            <option value="Russia">Russia</option>
+                            <option value="San Marino">San Marino</option>
+                            <option value="Serbia">Serbia</option>
+                            <option value="Slovakia">Slovakia</option>
+                            <option value="Slovenia">Slovenia</option>
+                            <option value="Spain">Spain</option>
+                            <option value="Sweden">Sweden</option>
+                            <option value="Switzerland">Switzerland</option>
+                            <option value="Ukraine">Ukraine</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Vatican City">Vatican City</option>
+                        </optgroup>
+                        <optgroup label="Middle East">
+                            <option value="Bahrain">Bahrain</option>
+                            <option value="Egypt">Egypt</option>
+                            <option value="Iran">Iran</option>
+                            <option value="Iraq">Iraq</option>
+                            <option value="Israel">Israel</option>
+                            <option value="Jordan">Jordan</option>
+                            <option value="Kuwait">Kuwait</option>
+                            <option value="Lebanon">Lebanon</option>
+                            <option value="Oman">Oman</option>
+                            <option value="Palestine">Palestine</option>
+                            <option value="Qatar">Qatar</option>
+                            <option value="Saudi Arabia">Saudi Arabia</option>
+                            <option value="Syria">Syria</option>
+                            <option value="United Arab Emirates">United Arab Emirates</option>
+                            <option value="Yemen">Yemen</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label data-translate="shippingLabel">Shipping Method</label>
+                    <div class="shipping-options-container">
+                        <label class="shipping-option" id="standardShippingOption">
+                            <div>
+                                <input type="radio" name="Shipping Method" value="150" id="standardRadio" checked onchange="clearAppliedCheckoutCoupon(); updateCheckoutSummary()"> 
+                                <span data-translate="standardShipping">Standard Shipping (3-5 Days)</span>
+                                <span class="shipping-green-note" data-translate="over5kFreeNote">(Free on orders over 5,000 TL)</span>
+                            </div>
+                            <span id="standardPriceTag">150 TL</span>
+                        </label>
+                        <label class="shipping-option" id="expressShippingOption">
+                            <div>
+                                <input type="radio" name="Shipping Method" value="400" id="expressRadio" onchange="clearAppliedCheckoutCoupon(); updateCheckoutSummary()"> 
+                                <span data-translate="expressShipping">Express Shipping (1-2 Days)</span>
+                            </div>
+                            <span id="expressPriceTag">400 TL</span>
+                        </label>
+                        <label class="shipping-option" id="internationalShippingOption" style="display:none;">
+                            <div>
+                                <input type="radio" name="Shipping Method" value="1500" id="internationalRadio" onchange="clearAppliedCheckoutCoupon(); updateCheckoutSummary()">
+                                <span>International Shipping</span>
+                            </div>
+                            <span id="internationalPriceTag">1500 TL</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label data-translate="cardHolderLabel">Cardholder Name</label>
+                    <input type="text" placeholder="Payment provider will be connected later" disabled>
+                </div>
+
+                <div class="checkout-form-group">
+                    <label data-translate="cardNumLabel">Card Number</label>
+                    <input type="text" placeholder="Payment provider will be connected later" disabled>
+                </div>
+
+                <div class="checkout-row">
+                    <div class="checkout-form-group">
+                        <label data-translate="expiryLabel">Expiry Date</label>
+                        <input type="text" placeholder="Payment provider will be connected later" disabled>
+                    </div>
+                    <div class="checkout-form-group">
+                        <label>CVV</label>
+                        <input type="text" placeholder="Payment provider will be connected later" disabled>
+                    </div>
+                </div>
+
+                <input type="hidden" name="Order ID" id="hiddenOrderId">
+                <input type="hidden" name="Ordered Items & Details" id="hiddenOrderDetails">
+                <input type="hidden" name="Total Amount Paid" id="hiddenTotalAmount">
+
+                <button type="submit" class="place-order-btn" id="placeOrderBtn" data-translate="completeOrderBtn">Complete Order</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="successView" class="view-section">
+        <div class="success-page">
+            <div class="success-icon">🎉</div>
+            <h2 class="success-title" data-translate="orderSuccessTitle">Order Placed Successfully!</h2>
+            <p class="success-msg" data-translate="orderSuccessMsg">Thank you for shopping with STIŁUS. We have received your order!</p>
+            <div class="email-sent-badge" id="emailSentBadge"></div>
+            <button class="back-home-btn" onclick="location.reload()" data-translate="backHomeBtn">Back to Home</button>
+        </div>
+    </div>
+
+
+    <div id="orderStatusView" class="view-section">
+        <div class="contact-page">
+            <h2 class="contact-title">Order Status</h2>
+            <p class="contact-subtitle">Check your order using your order number</p>
+
+            <div class="contact-form">
+                <div class="checkout-form-group">
+                    <label>Order Number</label>
+                    <input type="text" id="orderStatusNumber" placeholder="Enter your order number">
+                </div>
+
+                <button type="button" class="place-order-btn" id="checkOrderStatusBtn" onclick="checkOrderStatus()">Check Order Status</button>
+                <div id="orderStatusResult" style="margin-top:18px;"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="returnsView" class="view-section">
+        <div class="contact-page">
+            <h2 class="contact-title">Returns & Exchanges</h2>
+            <p class="contact-subtitle">Returns after receiving your order in Türkiye</p>
+            <div style="text-align:left; font-size:12px; line-height:1.8; color:var(--text-muted);">
+                <p><strong>1. You have 14 days after delivery.</strong><br>For eligible online purchases, you may notify STIŁUS that you wish to use your statutory right of withdrawal within 14 days from the date you receive your order. No reason is required.</p>
+                <p><strong>2. Submit your return or exchange request.</strong><br>Use the Contact Us section and include your order number, full name, email address and the item you want to return. For an exchange, also include the size you would like instead.</p>
+                <p><strong>3. Return shipping is arranged by the customer.</strong><br>STIŁUS does not provide a home collection or return courier pickup service. After submitting your request, you will receive the return address and the information needed to send the parcel back through a shipping company. Where the statutory right of withdrawal applies, return-shipping costs will be handled in accordance with the mandatory Turkish distance-sales rules.</p>
+                <p><strong>4. Send the parcel within 14 days of your return notice.</strong><br>After notifying us of your withdrawal, the product must be sent back within the legal return period. Please return the item securely and, where reasonably possible, with its original tags and packaging. Your statutory rights are not reduced by conditions that cannot legally be imposed.</p>
+                <p><strong>5. Refunds.</strong><br>Once a valid statutory withdrawal is exercised, eligible payments are refunded in accordance with Turkish law and normally through the original payment method. The applicable refund timing depends on the return method and when the parcel is handed to the carrier or received by STIŁUS.</p>
+                <p><strong>6. Exchanges.</strong><br>Exchanges are subject to stock availability. If the requested size is unavailable, you may complete the eligible return for a refund and place a new order for another available item or size.</p>
+                <p><strong>Exceptions.</strong><br>The statutory right of withdrawal may not apply to products covered by a legal exception, including goods made to the customer's specifications and certain sealed goods that are unsuitable for return for health or hygiene reasons once the protective seal has been opened after delivery.</p>
+                <button type="button" class="place-order-btn" onclick="changeView('contact', true)">Start Return / Exchange Request</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="termsView" class="view-section">
+        <div class="contact-page">
+            <h2 class="contact-title" data-translate="sidebarTerms">Terms & Conditions</h2>
+            <p class="contact-subtitle">STIŁUS</p>
+            <div style="text-align:left; font-size:12px; line-height:1.7; color:var(--text-muted);">
+                <p><strong>1. Scope and Applicable Law</strong><br>These Terms & Conditions apply to purchases made through the STIŁUS online store. Consumer transactions in Türkiye are subject to applicable Turkish consumer law, including Law No. 6502 on Consumer Protection and the Distance Contracts Regulation. Nothing in these terms limits mandatory consumer rights granted by applicable law.</p>
+
+                <p><strong>2. Seller and Contact Information</strong><br>STIŁUS provides customers with information about the products, prices, payment, delivery and applicable return conditions before an order is completed. For questions, notices or customer requests, you may contact us through the Contact Us section or by email at <strong>info@stilusist.com</strong>. The seller's legally required trade name, registered address, MERSİS/tax information and other mandatory business details must be displayed where required before the store begins commercial sales.</p>
+
+                <p><strong>3. Products and Prices</strong><br>Product descriptions, available sizes, stock information and prices are displayed on the website. Prices and any applicable delivery charges are shown before the customer confirms the order. Any additional charge requiring customer payment will only be applied after the customer has been clearly informed and, where required by law, has expressly approved it.</p>
+
+                <p><strong>4. Orders and Payment</strong><br>Before placing an order, customers are responsible for reviewing their selected products, quantities, sizes, delivery details, shipping method and total amount. The customer will be clearly informed that confirming the order creates a payment obligation. An order is subject to successful payment processing and product availability.</p>
+
+                <p><strong>5. Delivery</strong><br>Orders will be delivered to the address provided by the customer. Where no shorter delivery period has been promised, goods subject to the Turkish distance-sales rules will be dispatched/performed within the applicable statutory period, which is generally no later than 30 days for goods. STIŁUS remains responsible for loss or damage during delivery until the goods are delivered to the customer or a third party designated by the customer, subject to applicable law.</p>
+
+                <p><strong>6. Right of Withdrawal</strong><br>For purchases for which the statutory right of withdrawal applies, consumers may withdraw from the distance contract within <strong>14 days</strong> without giving a reason and without paying a contractual penalty. For goods, the period generally begins on the date the consumer or a designated third party receives the goods. A withdrawal notice may also be given after the contract is formed and before delivery.</p>
+
+                <p><strong>7. How to Exercise the Right of Withdrawal</strong><br>The customer must send the withdrawal notice before the 14-day period expires through a written method or a durable medium. Customers may contact STIŁUS through the Contact Us section or at <strong>info@stilusist.com</strong>. After giving notice, the customer must return the goods within the period required by Turkish law. Detailed return instructions are available under Returns & Refunds.</p>
+
+                <p><strong>8. Refunds</strong><br>Where the statutory right of withdrawal is validly exercised, refunds, including amounts that must legally be refunded, will be processed within the periods and under the conditions required by Turkish law. Refunds will normally be made using the original payment method unless another lawful method is agreed without causing additional cost to the consumer.</p>
+
+                <p><strong>9. Return Shipping</strong><br>Return-shipping responsibility and costs will be handled according to the applicable Turkish distance-sales rules and the return carrier/method disclosed to the customer. Customers should follow the return instructions provided by STIŁUS before sending a parcel.</p>
+
+                <p><strong>10. Exceptions to the Right of Withdrawal</strong><br>The statutory right of withdrawal does not apply where an exception under Turkish law applies. Examples may include goods produced according to the customer's specifications or clearly personalized goods, and certain sealed goods that are unsuitable for return for health or hygiene reasons once their protective seal has been opened after delivery.</p>
+
+                <p><strong>11. Defective or Non-Conforming Goods</strong><br>Nothing in this policy removes the consumer's statutory rights concerning defective or non-conforming goods. Such claims will be handled in accordance with applicable Turkish consumer protection legislation.</p>
+
+                <p><strong>12. Personal Data</strong><br>Personal data submitted through the website may be processed for purposes such as order fulfilment, delivery, customer support, legal compliance and other disclosed purposes. STIŁUS will provide the information required under Türkiye's Personal Data Protection Law No. 6698 (KVKK), including the identity of the data controller, purposes and legal grounds of processing, possible recipients, collection method and the rights of data subjects.</p>
+
+                <p><strong>13. Contact</strong><br>Questions regarding orders, returns or these Terms & Conditions can be submitted through the Contact Us section or sent to <strong>info@stilusist.com</strong>.</p>
+
+                <p style="margin-top:18px;"><strong>Important:</strong> These terms are intended to reflect the general requirements applicable to an online clothing store operating in Türkiye. Before accepting live orders, STIŁUS should insert its registered seller/company identity, full address, MERSİS/tax details where applicable, and have the final Distance Sales Agreement, Preliminary Information Form and KVKK disclosure reviewed for the business's actual legal structure and sales process.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="accountView" class="view-section">
+        <div class="account-page">
+            <div id="accountAuthContainer">
+                <h2 class="contact-title" data-translate="sidebarAccount">Register / Log In</h2>
+                <p class="contact-subtitle">STIŁUS</p>
+
+                <form id="accountForm" class="account-form" onsubmit="handleAccountSubmit(event)">
+                    <div class="checkout-form-group">
+                        <label data-translate="accountEmailLabel">Email</label>
+                        <input type="email" id="accountEmail" placeholder="name@example.com" autocomplete="email" required>
+                    </div>
+
+                    <div class="checkout-form-group">
+                        <label data-translate="accountPasswordLabel">Password</label>
+                        <input type="password" id="accountPassword" placeholder="Password" autocomplete="current-password" required>
+                    </div>
+
+                    <div class="checkout-form-group" id="accountNameGroup" style="display:none;">
+                        <label>First Name</label>
+                        <input type="text" id="accountName" placeholder="First Name" autocomplete="given-name">
+                    </div>
+
+                    <div class="checkout-form-group" id="accountLastNameGroup" style="display:none;">
+                        <label>Last Name</label>
+                        <input type="text" id="accountLastName" placeholder="Last Name" autocomplete="family-name">
+                    </div>
+
+                    <div class="checkout-form-group" id="accountBirthDateGroup" style="display:none;">
+                        <label data-translate="accountBirthDateLabel">Date of Birth</label>
+                        <input type="date" id="accountBirthDate" autocomplete="bday">
+                    </div>
+
+                    <div class="checkout-form-group" id="accountConfirmGroup" style="display:none;">
+                        <label data-translate="accountConfirmPasswordLabel">Confirm Password</label>
+                        <input type="password" id="accountConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" class="account-main-btn" id="accountSubmitBtn" data-translate="loginBtn">Log In</button>
+                </form>
+
+                <button type="button" class="account-create-btn" id="accountCreateBtn"
+                        onclick="setAccountMode('register')" data-translate="createAccountBtn">Create Account</button>
+
+                <div class="account-divider"><span data-translate="orText">OR</span></div>
+
+                <div class="account-switch-note" id="accountSwitchNote">
+                    <span data-translate="newCustomerText">New to STIŁUS?</span>
+                    <button type="button" class="account-switch-link" onclick="setAccountMode('register')" data-translate="createAccountLink">Create Account</button>
+                </div>
+            </div>
+
+            <div id="myAccountContainer" style="display:none;">
+                <h2 class="contact-title">My Account</h2>
+                <p class="contact-subtitle">STIŁUS</p>
+                <div class="checkout-summary-box">
+                    <div class="summary-row"><span>First Name:</span><span id="myAccountName"></span></div>
+                    <div class="summary-row"><span>Last Name:</span><span id="myAccountLastName"></span></div>
+                    <div class="summary-row"><span>Email:</span><span id="myAccountEmail"></span></div>
+                    <div class="summary-row"><span>Date of Birth:</span><span id="myAccountBirthDate"></span></div>
+                    <button type="button" class="account-main-btn" id="editAccountBtn" onclick="openAccountEdit()" style="margin-top:14px;">Edit Account</button>
+                    <button type="button" class="account-create-btn" onclick="logoutCustomer()" style="margin-top:10px;">Log Out</button>
+                    <div id="accountEditForm" style="display:none; margin-top:14px;">
+                        <div class="checkout-form-group">
+                            <label>First Name</label>
+                            <input type="text" id="editAccountName" placeholder="First Name" maxlength="120">
+                        </div>
+                        <div class="checkout-form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="editAccountLastName" placeholder="Last Name" maxlength="120">
+                        </div>
+                        <div class="checkout-form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="editAccountBirthDate">
+                        </div>
+                        <button type="button" class="account-main-btn" id="saveAccountEditBtn" onclick="saveAccountEdit()">Save Changes</button>
+                        <button type="button" class="account-create-btn" onclick="cancelAccountEdit()">Cancel</button>
+                    </div>
+                </div>
+
+                <h3 class="recommendation-title">My Addresses</h3>
+                <div class="checkout-summary-box">
+                    <div style="font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:12px;">Address 1</div>
+                    <div class="checkout-form-group">
+                        <label>Address Name (Optional)</label>
+                        <input type="text" id="myAddress1Label" placeholder="Home, Work..." maxlength="80">
+                    </div>
+                    <div class="checkout-form-group">
+                        <label>Full Address</label>
+                        <input type="text" id="myAddress1" placeholder="Full Address" maxlength="1000">
+                    </div>
+                    <div class="checkout-row">
+                        <div class="checkout-form-group">
+                            <label>Country</label>
+                            <input type="text" id="myAddress1Country" placeholder="Turkey" maxlength="120">
+                        </div>
+                        <div class="checkout-form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="myAddress1Phone" placeholder="+90 (500) 000 00 00" maxlength="40">
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid var(--chrome-border);margin:18px 0;"></div>
+
+                    <div style="font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:12px;">Address 2</div>
+                    <div class="checkout-form-group">
+                        <label>Address Name (Optional)</label>
+                        <input type="text" id="myAddress2Label" placeholder="Home, Work..." maxlength="80">
+                    </div>
+                    <div class="checkout-form-group">
+                        <label>Full Address</label>
+                        <input type="text" id="myAddress2" placeholder="Full Address" maxlength="1000">
+                    </div>
+                    <div class="checkout-row">
+                        <div class="checkout-form-group">
+                            <label>Country</label>
+                            <input type="text" id="myAddress2Country" placeholder="Turkey" maxlength="120">
+                        </div>
+                        <div class="checkout-form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="myAddress2Phone" placeholder="+90 (500) 000 00 00" maxlength="40">
+                        </div>
+                    </div>
+                    <button type="button" class="account-main-btn" id="saveAddressesBtn" onclick="saveCustomerAddresses()">Save Addresses</button>
+                </div>
+
+                <h3 class="recommendation-title">My Orders</h3>
+                <div id="myAccountOrders"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="contactView" class="view-section">
+        <div class="contact-page">
+            <h2 class="contact-title" data-translate="contactTitle">Contact Us</h2>
+            <p class="contact-subtitle" data-translate="contactSubtitle">You can text us</p>
+            
+            <form id="contactForm" class="contact-form" onsubmit="handleContactSubmit(event)">
+                <div class="checkout-form-group">
+                    <label data-translate="nameLabel">Name</label>
+                    <input type="text" id="contactName" placeholder="Your Name" maxlength="100" required>
+                </div>
+                <div class="checkout-form-group">
+                    <label>Email</label>
+                    <input type="email" id="contactEmail" placeholder="Your Email" maxlength="254" required>
+                </div>
+                <div class="checkout-form-group">
+                    <label data-translate="messageLabel">Message</label>
+                    <textarea class="contact-textarea" id="contactMessage" placeholder="Write your message here..." maxlength="5000" required></textarea>
+                </div>
+                <button type="submit" class="place-order-btn" id="contactSendBtn" data-translate="sendBtn">Send</button>
+                <div id="contactFormStatus" style="margin-top:10px; font-size:11px; font-weight:700;"></div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div>© 2026 STIŁUS</div>
+        <div class="footer-right-section">
+            <div class="social-icons">
+                <a href="https://www.instagram.com/stilus.ist?igsi=OWJweXR4ZDk2b3A2" target="_blank" title="Instagram">
+                    <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="https://wa.me/message/BWHP7XYL2GQPK1" target="_blank" title="WhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <div class="language-switch-banner" id="languageSwitchBanner" aria-label="Language">
+        <button type="button" id="langEnglishBtn" class="active" onclick="setLanguage('en')">ENGLISH</button>
+        <button type="button" id="langTurkishBtn" onclick="setLanguage('tr')">TÜRKÇE</button>
+    </div>
+
+
+    <div id="notFoundView" class="view-section">
+        <div class="contact-page" style="text-align:center;">
+            <h2 class="contact-title" style="font-size:72px;line-height:1;margin-bottom:10px;">404</h2>
+            <p class="contact-subtitle">Page Not Found</p>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 24px;">The page you are looking for does not exist or has been moved.</p>
+            <button type="button" class="place-order-btn" onclick="changeView('home', true)">Back to Home</button>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                bagTitle: "Shopping Bag",
+                emptyCart: "Your cart is currently empty.",
+                checkoutBtn: "Checkout",
+                bagNav: "Bag",
+                searchPlaceholder: "Search...",
+                catHoodies: "Hoodies",
+                catTshirts: "T-Shirts",
+                catPants: "Pants",
+                catShorts: "Shorts",
+                catAccessories: "Accessories",
+                sidebarHome: "Home (Featured)",
+                sidebarReturns: "Returns & Refunds",
+                sidebarContact: "Contact Us",
+                shopAllBtn: "Shop All",
+                featuredTitle: "Featured Collection",
+                allProductsTitle: "All Products",
+                reviewBagTitle: "Review Your Bag",
+                continueBtn: "Continue",
+                youMayLikeTitle: "You Also May Like",
+                secureCheckoutTitle: "Secure Checkout",
+                orderSummaryTitle: "Order Summary",
+                shippingSummaryLabel: "Shipping:",
+                totalAmountLabel: "Total Amount:",
+                firstNameLabel: "First Name",
+                lastNameLabel: "Last Name",
+                emailLabel: "Email Address",
+                phoneLabel: "Phone Number",
+                addressLabel: "Full Address",
+                shippingLabel: "Shipping Method",
+                standardShipping: "Standard Shipping (3-5 Days)",
+                over5kFreeNote: "(Free on orders over 5,000 TL)",
+                expressShipping: "Express Shipping (1-2 Days)",
+                freeText: "FREE",
+                cardHolderLabel: "Cardholder Name",
+                cardNumLabel: "Card Number",
+                expiryLabel: "Expiry Date",
+                completeOrderBtn: "Complete Order",
+                orderSuccessTitle: "Order Placed Successfully!",
+                orderSuccessMsg: "Thank you for shopping with STIŁUS. We have received your order!",
+                emailSuccessNotice: (email, orderId) => `📧 Two separate confirmation emails for order (<strong>#${orderId}</strong>) have been sent: One to you, and one to <strong>${email}</strong>.`,
+                backHomeBtn: "Back to Home",
+                contactTitle: "Contact Us",
+                contactSubtitle: "You can text us",
+                nameLabel: "Name",
+                messageLabel: "Message",
+                sendBtn: "Send",
+                sizeLabel: "Size",
+                addToCartBtn: "Add to Cart",
+                noProductsFound: "No products found.",
+                selectSizeAlert: "Please select an available size.",
+                outOfStockAlert: "Sorry, this size is out of stock.",
+                msgSentAlert: "Message sent successfully! We will get back to you soon.",
+                loginBtn: "Log In",
+                createAccountBtn: "Create Account",
+                createAccountLink: "Create Account",
+                newCustomerText: "New to STIŁUS?",
+                existingCustomerText: "Already have an account?"
+            },
+            tr: {
+                bagTitle:"Alışveriş Çantası",emptyCart:"Sepetiniz şu anda boş.",checkoutBtn:"Ödemeye Geç",bagNav:"Sepet",searchPlaceholder:"Ara...",
+                catHoodies:"Hoodie",catTshirts:"Tişört",catPants:"Pantolon",catShorts:"Şort",catAccessories:"Aksesuar",
+                sidebarHome:"Ana Sayfa (Öne Çıkanlar)",sidebarReturns:"İade & Değişim",sidebarContact:"İletişim",sidebarTerms:"Şartlar & Koşullar",sidebarAccount:"Kayıt Ol / Giriş Yap",
+                shopAllBtn:"Tümünü Gör",featuredTitle:"Öne Çıkan Koleksiyon",allProductsTitle:"Tüm Ürünler",reviewBagTitle:"Sepetini Kontrol Et",continueBtn:"Devam Et",youMayLikeTitle:"Bunları da Beğenebilirsin",
+                secureCheckoutTitle:"Güvenli Ödeme",orderSummaryTitle:"Sipariş Özeti",shippingSummaryLabel:"Kargo:",totalAmountLabel:"Toplam Tutar:",
+                firstNameLabel:"Ad",lastNameLabel:"Soyad",emailLabel:"E-posta Adresi",phoneLabel:"Telefon Numarası",addressLabel:"Açık Adres",shippingLabel:"Kargo Yöntemi",
+                standardShipping:"Standart Kargo (3-5 Gün)",over5kFreeNote:"(5.000 TL üzeri siparişlerde ücretsiz)",expressShipping:"Hızlı Kargo (1-2 Gün)",freeText:"ÜCRETSİZ",
+                cardHolderLabel:"Kart Sahibinin Adı",cardNumLabel:"Kart Numarası",expiryLabel:"Son Kullanma Tarihi",completeOrderBtn:"Siparişi Tamamla",
+                orderSuccessTitle:"Siparişiniz Başarıyla Alındı!",orderSuccessMsg:"STIŁUS'tan alışveriş yaptığınız için teşekkürler. Siparişinizi aldık!",
+                emailSuccessNotice:(email,orderId)=>`📧 Sipariş (<strong>#${orderId}</strong>) için iki ayrı onay e-postası gönderildi: biri size, diğeri <strong>${email}</strong> adresine.`,
+                backHomeBtn:"Ana Sayfaya Dön",contactTitle:"İletişim",contactSubtitle:"Bize mesaj gönderebilirsiniz",nameLabel:"Ad",messageLabel:"Mesaj",sendBtn:"Gönder",
+                sizeLabel:"Beden",addToCartBtn:"Sepete Ekle",noProductsFound:"Ürün bulunamadı.",selectSizeAlert:"Lütfen mevcut bir beden seçin.",outOfStockAlert:"Üzgünüz, bu beden stokta yok.",
+                msgSentAlert:"Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız.",loginBtn:"Giriş Yap",createAccountBtn:"Hesap Oluştur",createAccountLink:"Hesap Oluştur",
+                newCustomerText:"STIŁUS'ta yeni misiniz?",existingCustomerText:"Zaten hesabınız var mı?"
+            }
+        };
+
+        let currentLang = 'en';
+
+        const staticTurkishTranslations = {"404": "404", "Page Not Found": "Sayfa Bulunamadı", "The page you are looking for does not exist or has been moved.": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.", "Back to Home": "Ana Sayfaya Dön", "Total": "Toplam", "Order Status": "Sipariş Durumu", "Returns & Refunds": "İade & Değişim", "Terms & Conditions": "Şartlar & Koşullar", "← Back": "← Geri", "Discount:": "İndirim:", "Apply": "Uygula", "Checkout Form": "Ödeme Bilgileri", "Saved Address": "Kayıtlı Adres", "Other Address": "Başka Adres", "Country": "Ülke", "International Shipping": "Uluslararası Kargo", "CVV": "CVV", "Check your order using your order number": "Sipariş numaranızla sipariş durumunuzu kontrol edin", "Order Number": "Sipariş Numarası", "Check Order Status": "Sipariş Durumunu Kontrol Et", "Returns & Exchanges": "İade & Değişim", "Returns after receiving your order in Türkiye": "Türkiye'de siparişinizi teslim aldıktan sonra iade", "1. You have 14 days after delivery.": "1. Teslimattan sonra 14 gününüz vardır.", "For eligible online purchases, you may notify STIŁUS that you wish to use your statutory right of withdrawal within 14 days from the date you receive your order. No reason is required.": "Uygun çevrim içi alışverişlerde, siparişinizi teslim aldığınız tarihten itibaren 14 gün içinde yasal cayma hakkınızı kullanmak istediğinizi STIŁUS'a bildirebilirsiniz. Herhangi bir gerekçe göstermeniz gerekmez.", "2. Submit your return or exchange request.": "2. İade veya değişim talebinizi gönderin.", "Use the Contact Us section and include your order number, full name, email address and the item you want to return. For an exchange, also include the size you would like instead.": "İletişim bölümünü kullanarak sipariş numaranızı, ad soyadınızı, e-posta adresinizi ve iade etmek istediğiniz ürünü belirtin. Değişim istiyorsanız talep ettiğiniz bedeni de ekleyin.", "3. Return shipping is arranged by the customer.": "3. İade gönderimi müşteri tarafından düzenlenir.", "STIŁUS does not provide a home collection or return courier pickup service. After submitting your request, you will receive the return address and the information needed to send the parcel back through a shipping company. Where the statutory right of withdrawal applies, return-shipping costs will be handled in accordance with the mandatory Turkish distance-sales rules.": "STIŁUS evden teslim alma veya iade kuryesi hizmeti sağlamaz. Talebinizi gönderdikten sonra paketi bir kargo firmasıyla geri gönderebilmeniz için iade adresi ve gerekli bilgiler size iletilir. Yasal cayma hakkının geçerli olduğu durumlarda iade kargo masrafları Türkiye'deki zorunlu mesafeli satış kurallarına göre ele alınır.", "4. Send the parcel within 14 days of your return notice.": "4. İade bildiriminizden itibaren 14 gün içinde paketi gönderin.", "After notifying us of your withdrawal, the product must be sent back within the legal return period. Please return the item securely and, where reasonably possible, with its original tags and packaging. Your statutory rights are not reduced by conditions that cannot legally be imposed.": "Cayma bildiriminizden sonra ürün yasal iade süresi içinde geri gönderilmelidir. Ürünü güvenli şekilde ve makul ölçüde mümkünse orijinal etiketleri ve ambalajıyla gönderin. Yasal olarak uygulanamayacak koşullar kanuni haklarınızı sınırlandırmaz.", "5. Refunds.": "5. Para İadesi.", "Once a valid statutory withdrawal is exercised, eligible payments are refunded in accordance with Turkish law and normally through the original payment method. The applicable refund timing depends on the return method and when the parcel is handed to the carrier or received by STIŁUS.": "Geçerli bir yasal cayma hakkı kullanıldığında uygun ödemeler Türk hukukuna göre ve normalde ilk ödeme yöntemi üzerinden iade edilir. İade süresi, iade yöntemine ve paketin kargo firmasına teslim edildiği veya STIŁUS tarafından alındığı zamana bağlıdır.", "6. Exchanges.": "6. Değişim.", "Exchanges are subject to stock availability. If the requested size is unavailable, you may complete the eligible return for a refund and place a new order for another available item or size.": "Değişim stok durumuna bağlıdır. İstenen beden mevcut değilse uygun iade işlemini tamamlayıp para iadesi alabilir ve mevcut başka bir ürün veya beden için yeni sipariş verebilirsiniz.", "Exceptions.": "İstisnalar.", "The statutory right of withdrawal may not apply to products covered by a legal exception, including goods made to the customer's specifications and certain sealed goods that are unsuitable for return for health or hygiene reasons once the protective seal has been opened after delivery.": "Yasal cayma hakkı; müşterinin özel taleplerine göre üretilen ürünler ve teslimattan sonra koruyucu mührü açılmış, sağlık veya hijyen nedeniyle iadeye uygun olmayan bazı mühürlü ürünler gibi kanuni istisna kapsamındaki ürünlerde geçerli olmayabilir.", "Start Return / Exchange Request": "İade / Değişim Talebi Başlat", "1. Scope and Applicable Law": "1. Kapsam ve Uygulanacak Hukuk", "2. Seller and Contact Information": "2. Satıcı ve İletişim Bilgileri", "3. Products and Prices": "3. Ürünler ve Fiyatlar", "4. Orders and Payment": "4. Siparişler ve Ödeme", "5. Delivery": "5. Teslimat", "6. Right of Withdrawal": "6. Cayma Hakkı", "7. How to Exercise the Right of Withdrawal": "7. Cayma Hakkının Kullanılması", "8. Refunds": "8. Para İadeleri", "9. Return Shipping": "9. İade Kargosu", "10. Exceptions to the Right of Withdrawal": "10. Cayma Hakkının İstisnaları", "11. Defective or Non-Conforming Goods": "11. Ayıplı veya Sözleşmeye Aykırı Ürünler", "12. Personal Data": "12. Kişisel Veriler", "13. Contact": "13. İletişim", "Important:": "Önemli:", "Email": "E-posta", "Password": "Şifre", "Date of Birth": "Doğum Tarihi", "Confirm Password": "Şifreyi Onayla", "Log In": "Giriş Yap", "Create Account": "Hesap Oluştur", "OR": "VEYA", "New to STIŁUS?": "STIŁUS'ta yeni misiniz?", "My Account": "Hesabım", "First Name:": "Ad:", "Last Name:": "Soyad:", "Email:": "E-posta:", "Date of Birth:": "Doğum Tarihi:", "Edit Account": "Hesabı Düzenle", "Log Out": "Çıkış Yap", "Save Changes": "Değişiklikleri Kaydet", "Cancel": "İptal", "My Addresses": "Adreslerim", "Address 1": "Adres 1", "Address Name (Optional)": "Adres Adı (İsteğe Bağlı)", "Address 2": "Adres 2", "Save Addresses": "Adresleri Kaydet", "My Orders": "Siparişlerim", "These Terms & Conditions apply to purchases made through the STIŁUS online store. Consumer transactions in Türkiye are subject to applicable Turkish consumer law, including Law No. 6502 on Consumer Protection and the Distance Contracts Regulation. Nothing in these terms limits mandatory consumer rights granted by applicable law.": "Bu Şartlar ve Koşullar STIŁUS çevrim içi mağazası üzerinden yapılan alışverişlere uygulanır. Türkiye'deki tüketici işlemleri, 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği dahil ilgili Türk tüketici hukukuna tabidir. Bu şartlardaki hiçbir hüküm yürürlükteki mevzuatın tanıdığı zorunlu tüketici haklarını sınırlandırmaz.", "Product descriptions, available sizes, stock information and prices are displayed on the website. Prices and any applicable delivery charges are shown before the customer confirms the order. Any additional charge requiring customer payment will only be applied after the customer has been clearly informed and, where required by law, has expressly approved it.": "Ürün açıklamaları, mevcut bedenler, stok bilgileri ve fiyatlar internet sitesinde gösterilir. Fiyatlar ve uygulanabilir teslimat ücretleri müşteri siparişi onaylamadan önce gösterilir. Müşterinin ödemesini gerektiren ek ücretler ancak müşteri açıkça bilgilendirildikten ve kanunen gerektiğinde açık onayı alındıktan sonra uygulanır.", "Before placing an order, customers are responsible for reviewing their selected products, quantities, sizes, delivery details, shipping method and total amount. The customer will be clearly informed that confirming the order creates a payment obligation. An order is subject to successful payment processing and product availability.": "Sipariş vermeden önce müşteriler seçtikleri ürünleri, adetleri, bedenleri, teslimat bilgilerini, kargo yöntemini ve toplam tutarı kontrol etmekle sorumludur. Siparişin onaylanmasının ödeme yükümlülüğü doğurduğu müşteriye açıkça bildirilir. Sipariş, ödemenin başarıyla işlenmesine ve ürünün stokta bulunmasına bağlıdır.", "Orders will be delivered to the address provided by the customer. Where no shorter delivery period has been promised, goods subject to the Turkish distance-sales rules will be dispatched/performed within the applicable statutory period, which is generally no later than 30 days for goods. STIŁUS remains responsible for loss or damage during delivery until the goods are delivered to the customer or a third party designated by the customer, subject to applicable law.": "Siparişler müşterinin belirttiği adrese teslim edilir. Daha kısa bir teslim süresi taahhüt edilmemişse Türk mesafeli satış kurallarına tabi ürünler, ürünler için genel olarak en geç 30 gün olan geçerli yasal süre içinde gönderilir/ifa edilir. STIŁUS, yürürlükteki mevzuata tabi olarak ürün müşteriye veya müşterinin belirlediği üçüncü kişiye teslim edilene kadar teslimat sırasındaki kayıp veya hasardan sorumludur.", "Where the statutory right of withdrawal is validly exercised, refunds, including amounts that must legally be refunded, will be processed within the periods and under the conditions required by Turkish law. Refunds will normally be made using the original payment method unless another lawful method is agreed without causing additional cost to the consumer.": "Yasal cayma hakkının geçerli şekilde kullanılması halinde kanunen iade edilmesi gereken tutarlar dahil geri ödemeler Türk hukukunun öngördüğü süre ve koşullarda işleme alınır. Tüketiciye ek maliyet doğurmayan başka bir yasal yöntem kararlaştırılmadıkça geri ödemeler normalde ilk ödeme yöntemi kullanılarak yapılır.", "Return-shipping responsibility and costs will be handled according to the applicable Turkish distance-sales rules and the return carrier/method disclosed to the customer. Customers should follow the return instructions provided by STIŁUS before sending a parcel.": "İade kargosuna ilişkin sorumluluk ve masraflar yürürlükteki Türk mesafeli satış kuralları ile müşteriye bildirilen iade kargo firması/yöntemine göre ele alınır. Müşteriler paketi göndermeden önce STIŁUS tarafından sağlanan iade talimatlarını izlemelidir.", "The statutory right of withdrawal does not apply where an exception under Turkish law applies. Examples may include goods produced according to the customer's specifications or clearly personalized goods, and certain sealed goods that are unsuitable for return for health or hygiene reasons once their protective seal has been opened after delivery.": "Türk hukukunda bir istisnanın geçerli olduğu durumlarda yasal cayma hakkı uygulanmaz. Örnekler arasında müşterinin taleplerine göre üretilen veya açıkça kişiselleştirilmiş ürünler ile teslimattan sonra koruyucu mührü açıldığında sağlık veya hijyen nedeniyle iadeye uygun olmayan bazı mühürlü ürünler bulunabilir.", "Nothing in this policy removes the consumer's statutory rights concerning defective or non-conforming goods. Such claims will be handled in accordance with applicable Turkish consumer protection legislation.": "Bu politikadaki hiçbir hüküm tüketicinin ayıplı veya sözleşmeye aykırı ürünlere ilişkin yasal haklarını ortadan kaldırmaz. Bu tür talepler yürürlükteki Türk tüketiciyi koruma mevzuatına göre ele alınır.", "Personal data submitted through the website may be processed for purposes such as order fulfilment, delivery, customer support, legal compliance and other disclosed purposes. STIŁUS will provide the information required under Türkiye's Personal Data Protection Law No. 6698 (KVKK), including the identity of the data controller, purposes and legal grounds of processing, possible recipients, collection method and the rights of data subjects.": "İnternet sitesi üzerinden iletilen kişisel veriler siparişin yerine getirilmesi, teslimat, müşteri desteği, yasal uyum ve açıklanan diğer amaçlarla işlenebilir. STIŁUS; veri sorumlusunun kimliği, işleme amaçları ve hukuki sebepleri, olası alıcılar, veri toplama yöntemi ve ilgili kişilerin hakları dahil 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında gerekli bilgilendirmeyi sağlayacaktır.", "Turkey": "Türkiye", "Albania": "Arnavutluk", "Austria": "Avusturya", "Belgium": "Belçika", "Bosnia and Herzegovina": "Bosna-Hersek", "Bulgaria": "Bulgaristan", "Croatia": "Hırvatistan", "Cyprus": "Kıbrıs", "Czechia": "Çekya", "Denmark": "Danimarka", "Estonia": "Estonya", "Finland": "Finlandiya", "France": "Fransa", "Germany": "Almanya", "Greece": "Yunanistan", "Hungary": "Macaristan", "Iceland": "İzlanda", "Ireland": "İrlanda", "Italy": "İtalya", "Kosovo": "Kosova", "Latvia": "Letonya", "Liechtenstein": "Lihtenştayn", "Lithuania": "Litvanya", "Luxembourg": "Lüksemburg", "Monaco": "Monako", "Montenegro": "Karadağ", "Netherlands": "Hollanda", "North Macedonia": "Kuzey Makedonya", "Norway": "Norveç", "Poland": "Polonya", "Portugal": "Portekiz", "Romania": "Romanya", "Russia": "Rusya", "Serbia": "Sırbistan", "Slovakia": "Slovakya", "Slovenia": "Slovenya", "Spain": "İspanya", "Sweden": "İsveç", "Switzerland": "İsviçre", "Ukraine": "Ukrayna", "United Kingdom": "Birleşik Krallık", "Vatican City": "Vatikan", "Bahrain": "Bahreyn", "Egypt": "Mısır", "Iran": "İran", "Iraq": "Irak", "Israel": "İsrail", "Jordan": "Ürdün", "Kuwait": "Kuveyt", "Lebanon": "Lübnan", "Oman": "Umman", "Palestine": "Filistin", "Qatar": "Katar", "Saudi Arabia": "Suudi Arabistan", "Syria": "Suriye", "United Arab Emirates": "Birleşik Arap Emirlikleri"};
+
+        function applyStaticLanguage(lang) {
+            document.querySelectorAll('[data-original-text]').forEach(el => {
+                const original = el.getAttribute('data-original-text');
+                el.textContent = lang === 'tr' && staticTurkishTranslations[original] ? staticTurkishTranslations[original] : original;
+            });
+        }
+
+        function prepareStaticTranslations() {
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+            const nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+            nodes.forEach(node => {
+                const p=node.parentElement, value=node.nodeValue.trim();
+                if(!p || !value || p.closest('script,style,#languageSwitchBanner') || p.hasAttribute('data-translate')) return;
+                if(staticTurkishTranslations[value] && p.childNodes.length===1) p.setAttribute('data-original-text',value);
+            });
+        }
+
+        function applyLanguage() {
+            const t=translations[currentLang]||translations.en;
+            document.documentElement.lang=currentLang;
+            document.querySelectorAll('[data-translate]').forEach(el=>{
+                const key=el.getAttribute('data-translate');
+                if(typeof t[key]==='string') el.textContent=t[key];
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el=>{
+                const key=el.getAttribute('data-translate-placeholder');
+                if(typeof t[key]==='string') el.placeholder=t[key];
+            });
+            applyStaticLanguage(currentLang);
+            document.getElementById('langEnglishBtn')?.classList.toggle('active',currentLang==='en');
+            document.getElementById('langTurkishBtn')?.classList.toggle('active',currentLang==='tr');
+            const o=document.getElementById('orderStatusNumber'); if(o)o.placeholder=currentLang==='tr'?'Sipariş numaranızı girin':'Enter your order number';
+            const c=document.getElementById('checkoutCouponCode'); if(c)c.placeholder=currentLang==='tr'?'İndirim kodu':'Discount code';
+            if(typeof accountMode!=='undefined') setAccountMode(accountMode);
+            if(typeof updateCartUI==='function') updateCartUI();
+        }
+
+        function setLanguage(lang) {
+            if(!translations[lang])return;
+            currentLang=lang;
+            localStorage.setItem('stilusLanguage',lang);
+            applyLanguage();
+        }
+
+
+        let productsData = [];
+        let activeSitewideSale = null;
+        let appliedCheckoutCoupon = null;
+        let storeSettings = {
+            standard_shipping: 150,
+            express_shipping: 400,
+            international_shipping: 1500,
+            free_shipping_threshold: 5000
+        };
+
+        function roundStoreMoney(value) {
+            return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+        }
+
+        function renderProductPrice(product) {
+            if (product.originalRawPrice > product.rawPrice) {
+                const percentage = activeSitewideSale?.percentage ? Number(activeSitewideSale.percentage) : 0;
+                return `
+                    <div class="product-price-wrap">
+                        <span class="product-price-before">${product.originalRawPrice} TL</span>
+                        <span class="product-price-after">${product.rawPrice} TL</span>
+                        ${percentage > 0 ? `<span class="sale-badge">-${percentage}%</span>` : ''}
+                    </div>
+                `;
+            }
+
+            return `<div class="card-price">${product.rawPrice} TL</div>`;
+        }
+
+        function clearAppliedCheckoutCoupon(clearInput = false) {
+            appliedCheckoutCoupon = null;
+            const row = document.getElementById('couponDiscountSummaryRow');
+            const price = document.getElementById('couponDiscountSummaryPrice');
+            const message = document.getElementById('checkoutCouponMessage');
+            if (row) row.classList.add('hidden');
+            if (price) price.textContent = '0 TL';
+            if (message) message.textContent = '';
+            if (clearInput) {
+                const input = document.getElementById('checkoutCouponCode');
+                if (input) input.value = '';
+            }
+        }
+
+        async function loadProductsFromBackend() {
+            try {
+                const [productsResponse, saleResponse, settingsResponse] = await Promise.all([
+                    fetch("http://localhost:5000/api/products"),
+                    fetch("http://localhost:5000/api/sitewide-sale"),
+                    fetch("http://localhost:5000/api/store-settings")
+                ]);
+
+                if (!productsResponse.ok) {
+                    throw new Error("Failed to load products from the backend");
+                }
+
+                const data = await productsResponse.json();
+                const saleData = saleResponse.ok ? await saleResponse.json().catch(() => ({ success:false })) : { success:false };
+                const settingsData = settingsResponse.ok ? await settingsResponse.json().catch(() => ({ success:false })) : { success:false };
+
+                if (!data.success || !Array.isArray(data.products)) {
+                    throw new Error("Invalid product data received from the backend");
+                }
+
+                activeSitewideSale = saleData.success ? saleData.sale : null;
+                if (settingsData.success && settingsData.settings) {
+                    storeSettings = settingsData.settings;
+                    const homepageBannerImage = document.getElementById('homepageBannerImage');
+                    if (homepageBannerImage && storeSettings.banner_url) {
+                        homepageBannerImage.src = storeSettings.banner_url;
+                    }
+                }
+
+                productsData = data.products.map((product) => {
+                    const originalRawPrice = Number(product.price) || 0;
+                    const percentage = activeSitewideSale ? Number(activeSitewideSale.percentage) || 0 : 0;
+                    const rawPrice = percentage > 0
+                        ? roundStoreMoney(originalRawPrice * (1 - percentage / 100))
+                        : originalRawPrice;
+
+                    return {
+                        id: product.id,
+                        category: product.category,
+                        name: product.name,
+                        price: `${rawPrice} TL`,
+                        rawPrice,
+                        originalRawPrice,
+                        img: product.image,
+                        images: Array.isArray(product.images)
+                            ? product.images.filter(Boolean)
+                            : [product.image, product.image2 || product.image_2 || product.secondImage || product.image2Url].filter(Boolean),
+                        stock: product.stock
+                    };
+                });
+
+                console.log("Products loaded from backend:", productsData);
+                changeView("home", false);
+            } catch (error) {
+                console.error("Backend connection error:", error);
+
+                const productGrid = document.getElementById("productGrid");
+
+                if (productGrid) {
+                    productGrid.innerHTML = `
+                        <p style="grid-column: 1/-1; text-align: center;">
+                            Unable to load products. Please make sure the backend server is running.
+                        </p>
+                    `;
+                }
+            }
+        }
+
+        loadProductsFromBackend();
+
+        function getSortedProductSizes(stock) {
+            const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL"];
+            return Object.keys(stock || {}).sort((a, b) => {
+                const aUpper = String(a).toUpperCase();
+                const bUpper = String(b).toUpperCase();
+                const aIndex = sizeOrder.indexOf(aUpper);
+                const bIndex = sizeOrder.indexOf(bUpper);
+
+                if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                if (aIndex !== -1) return -1;
+                if (bIndex !== -1) return 1;
+
+                const aNumber = Number(a);
+                const bNumber = Number(b);
+                if (Number.isFinite(aNumber) && Number.isFinite(bNumber)) return aNumber - bNumber;
+
+                return 0;
+            });
+        }
+
+        function openProductDetail(productId) {
+            const product = productsData.find(p => p.id === productId);
+            if (!product) return;
+
+            const container = document.getElementById('detailContentContainer');
+            let sizesHtml = '';
+            let firstAvailableFound = false;
+
+            for (let sz of getSortedProductSizes(product.stock)) {
+                let qty = product.stock[sz];
+                let isAvailable = qty > 0;
+                let cssClass = '';
+
+                if (!isAvailable) {
+                    cssClass = 'size-btn out-of-stock';
+                } else if (!firstAvailableFound) {
+                    cssClass = 'size-btn active';
+                    firstAvailableFound = true;
+                } else {
+                    cssClass = 'size-btn';
+                }
+
+                sizesHtml += `<button class="${cssClass}" data-size="${sz}" onclick="selectSize(this, ${isAvailable})">${sz}</button>`;
+            }
+
+            const detailImages = getProductImages(product);
+            container.innerHTML = `
+                <div class="detail-img-box">
+                    <img id="detailProductImage" src="${detailImages[0]}" alt="${product.name}">
+                    ${detailImages.length > 1 ? `
+                        <button type="button" class="image-nav-arrow prev" aria-label="Previous image"
+                            onclick="changeDetailImage(-1, '${product.id}'); event.stopPropagation();">‹</button>
+                        <button type="button" class="image-nav-arrow next" aria-label="Next image"
+                            onclick="changeDetailImage(1, '${product.id}'); event.stopPropagation();">›</button>
+                    ` : ''}
+                </div>
+                <div class="detail-info-box product-card" data-id="${product.id}" style="border:none; padding:0; background:transparent;">
+                    <h1 class="detail-title">${product.name}</h1>
+                    ${renderProductPrice(product)}
+
+                    <div class="size-selector">
+                        <span class="size-label">${translations[currentLang].sizeLabel}</span>
+                        <div class="sizes">${sizesHtml}</div>
+                    </div>
+
+                    <button class="add-to-cart-btn" style="padding: 14px;" onclick="addToCart(this, '${product.id}')">${translations[currentLang].addToCartBtn}</button>
+                </div>
+            `;
+
+            const otherProducts = productsData.filter(p => p.id !== productId);
+            const randomRecs = [...otherProducts].sort(() => 0.5 - Math.random()).slice(0, 4);
+            renderMainProducts(randomRecs, 'detailRecommendationGrid');
+
+            changeView('product-detail', true);
+        }
+
+        function getProductImages(product) {
+            const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+            if (images.length) return images;
+            return [product.img].filter(Boolean);
+        }
+
+        function changeCardImage(button, direction, productId) {
+            event.stopPropagation();
+
+            const product = productsData.find(p => p.id === productId);
+            if (!product) return;
+
+            const images = getProductImages(product);
+            if (images.length < 2) return;
+
+            const img = button.closest('.card-img-container')?.querySelector('img');
+            if (!img) return;
+
+            let index = Number(img.dataset.imageIndex || 0);
+            index = (index + direction + images.length) % images.length;
+            img.dataset.imageIndex = index;
+            img.src = images[index];
+        }
+
+        function changeDetailImage(direction, productId) {
+            const product = productsData.find(p => p.id === productId);
+            if (!product) return;
+
+            const images = getProductImages(product);
+            if (images.length < 2) return;
+
+            const img = document.getElementById('detailProductImage');
+            if (!img) return;
+
+            let index = Number(img.dataset.imageIndex || 0);
+            index = (index + direction + images.length) % images.length;
+            img.dataset.imageIndex = index;
+            img.src = images[index];
+        }
+
+        function renderMainProducts(items, targetGridId = 'productGrid') {
+            const grid = document.getElementById(targetGridId);
+            if(!grid) return;
+
+            if(items.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">${translations[currentLang].noProductsFound}</p>`;
+                return;
+            }
+            let html = '';
+            items.forEach(item => {
+                let sizesHtml = '';
+                let firstAvailableFound = false;
+
+                for (let sz of getSortedProductSizes(item.stock)) {
+                    let qty = item.stock[sz];
+                    let isAvailable = qty > 0;
+                    let cssClass = '';
+
+                    if (!isAvailable) {
+                        cssClass = 'size-btn out-of-stock';
+                    } else if (!firstAvailableFound) {
+                        cssClass = 'size-btn active';
+                        firstAvailableFound = true;
+                    } else {
+                        cssClass = 'size-btn';
+                    }
+
+                    sizesHtml += `<button class="${cssClass}" data-size="${sz}" onclick="selectSize(this, ${isAvailable})">${sz}</button>`;
+                }
+
+                html += `
+                    <article class="product-card" data-id="${item.id}">
+                        <div class="card-img-container" onclick="openProductDetail('${item.id}')">
+                            <img src="${getProductImages(item)[0]}" alt="${item.name}" data-image-index="0">
+                            ${getProductImages(item).length > 1 ? `
+                                <button type="button" class="image-nav-arrow prev" aria-label="Previous image"
+                                    onclick="changeCardImage(this, -1, '${item.id}');">‹</button>
+                                <button type="button" class="image-nav-arrow next" aria-label="Next image"
+                                    onclick="changeCardImage(this, 1, '${item.id}');">›</button>
+                            ` : ''}
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title" onclick="openProductDetail('${item.id}')">${item.name}</h3>
+                            ${renderProductPrice(item)}
+                            <div class="size-selector">
+                                <span class="size-label">${translations[currentLang].sizeLabel}</span>
+                                <div class="sizes">${sizesHtml}</div>
+                            </div>
+                            <button class="add-to-cart-btn" onclick="addToCart(this, '${item.id}')">${translations[currentLang].addToCartBtn}</button>
+                        </div>
+                    </article>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function renderReviewItems(items, gridId) {
+            const grid = document.getElementById(gridId);
+            if(items.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">${translations[currentLang].emptyCart}</p>`;
+                return;
+            }
+            let html = '';
+            items.forEach(item => {
+                const quantity = Number(item.quantity) || 1;
+                const lineTotal = item.rawPrice * quantity;
+                html += `
+                    <article class="product-card cart-review-item">
+                        <div class="card-img-container" onclick="openProductDetail('${item.id}')">
+                            <img src="${getProductImages(item)[0]}" alt="${item.name}" data-image-index="0">
+                            ${getProductImages(item).length > 1 ? `
+                                <button type="button" class="image-nav-arrow prev" aria-label="Previous image"
+                                    onclick="changeCardImage(this, -1, '${item.id}');">‹</button>
+                                <button type="button" class="image-nav-arrow next" aria-label="Next image"
+                                    onclick="changeCardImage(this, 1, '${item.id}');">›</button>
+                            ` : ''}
+                        </div>
+                        <button type="button" class="checkout-item-remove review-remove" aria-label="Remove ${item.name}" onclick="removeFromCart('${item.id}', '${item.size}')">×</button>
+                        <div class="card-body">
+                            <h3 class="card-title" onclick="openProductDetail('${item.id}')">${item.name} (${item.size})</h3>
+                            <div class="card-price">${item.price} × ${quantity}</div>
+                            <div class="card-price">${lineTotal} TL</div>
+                        </div>
+                    </article>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function showShopAll() {
+            document.getElementById('searchInput').value = "";
+            document.getElementById('heroBanner').classList.add('hidden');
+            document.getElementById('sectionTitle').innerText = translations[currentLang].allProductsTitle;
+            renderMainProducts(productsData, 'productGrid');
+            document.querySelectorAll('.nav-cat-link').forEach(l => l.classList.remove('active'));
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+            history.pushState({ view: 'shop-all' }, "", "#shop-all");
+        }
+
+        function updateShippingOptionsByCountry() {
+            const countrySelect = document.getElementById('countrySelect');
+            const standardOption = document.getElementById('standardShippingOption');
+            const expressOption = document.getElementById('expressShippingOption');
+            const internationalOption = document.getElementById('internationalShippingOption');
+            const standardRadio = document.getElementById('standardRadio');
+            const expressRadio = document.getElementById('expressRadio');
+            const internationalRadio = document.getElementById('internationalRadio');
+
+            if (!countrySelect) return;
+
+            const isTurkey = countrySelect.value === 'Turkey';
+            standardOption.style.display = isTurkey ? 'flex' : 'none';
+            expressOption.style.display = isTurkey ? 'flex' : 'none';
+            internationalOption.style.display = isTurkey ? 'none' : 'flex';
+
+            standardRadio.disabled = !isTurkey;
+            expressRadio.disabled = !isTurkey;
+            internationalRadio.disabled = isTurkey;
+
+            if (isTurkey) {
+                if (!standardRadio.checked && !expressRadio.checked) {
+                    standardRadio.checked = true;
+                }
+                internationalRadio.checked = false;
+            } else {
+                standardRadio.checked = false;
+                expressRadio.checked = false;
+                internationalRadio.checked = true;
+            }
+
+            updateCheckoutSummary();
+        }
+
+        function updateCheckoutSummary() {
+            const container = document.getElementById('checkoutMiniItems');
+            const totalElement = document.getElementById('checkoutTotalPrice');
+            const shippingSummaryElement = document.getElementById('summaryShippingPrice');
+            const standardRadio = document.getElementById('standardRadio');
+            const expressRadio = document.getElementById('expressRadio');
+            const internationalRadio = document.getElementById('internationalRadio');
+            const standardPriceTag = document.getElementById('standardPriceTag');
+            const expressPriceTag = document.getElementById('expressPriceTag');
+            const internationalPriceTag = document.getElementById('internationalPriceTag');
+
+            if (cartItems.length === 0) {
+                container.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">${translations[currentLang].emptyCart}</span>`;
+                shippingSummaryElement.innerText = '0 TL';
+                totalElement.innerText = '0 TL';
+                return;
+            }
+
+            let html = '';
+            let itemsSubtotal = 0;
+
+            cartItems.forEach(item => {
+                const quantity = Number(item.quantity) || 1;
+                itemsSubtotal += item.rawPrice * quantity;
+                html += `
+                    <div class="mini-item-row checkout-cart-item">
+                        <div class="mini-item-left">
+                            <img src="${item.img}" class="mini-item-img" alt="${item.name}">
+                            <span class="mini-item-name">${item.name} (${item.size}) × ${quantity}</span>
+                        </div>
+                        <span class="mini-item-price">${item.rawPrice * quantity} TL</span>
+                        <button type="button" class="checkout-item-remove" aria-label="Remove ${item.name}" onclick="removeFromCart('${item.id}', '${item.size}')">×</button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            const countrySelect = document.getElementById('countrySelect');
+            const isTurkey = !countrySelect || countrySelect.value === 'Turkey';
+            const standardShippingPrice = Number(storeSettings.standard_shipping) || 0;
+            const expressShippingPrice = Number(storeSettings.express_shipping) || 0;
+            const internationalShippingPrice = Number(storeSettings.international_shipping) || 0;
+            const freeShippingThreshold = Number(storeSettings.free_shipping_threshold) || 0;
+            const isFreeShippingEligible = isTurkey && itemsSubtotal > freeShippingThreshold;
+            const freeText = translations[currentLang].freeText;
+
+            expressRadio.value = String(expressShippingPrice);
+            internationalRadio.value = String(internationalShippingPrice);
+            expressPriceTag.innerText = expressShippingPrice + ' TL';
+            internationalPriceTag.innerText = internationalShippingPrice + ' TL';
+
+            if (isFreeShippingEligible) {
+                standardRadio.value = "0";
+                standardPriceTag.innerText = "0 TL (" + freeText + ")";
+                standardPriceTag.className = "free-shipping-badge";
+            } else {
+                standardRadio.value = String(standardShippingPrice);
+                standardPriceTag.innerText = standardShippingPrice + " TL";
+                standardPriceTag.className = "";
+            }
+
+            const selectedShipping = document.querySelector('input[name="Shipping Method"]:checked');
+            let shippingCost = selectedShipping
+                ? Number(selectedShipping.value)
+                : (isTurkey ? standardShippingPrice : internationalShippingPrice);
+
+            if (isFreeShippingEligible && selectedShipping?.id === 'standardRadio') {
+                shippingCost = 0;
+            }
+
+            if (shippingCost === 0) {
+                shippingSummaryElement.innerHTML = `0 TL <span class="free-shipping-badge">(${freeText})</span>`;
+            } else {
+                shippingSummaryElement.innerText = shippingCost + ' TL';
+            }
+
+            const couponItemDiscount = Number(appliedCheckoutCoupon?.discountAmount) || 0;
+            const couponShippingDiscount = Number(appliedCheckoutCoupon?.shippingDiscount) || 0;
+            const couponTotalDiscount = roundStoreMoney(couponItemDiscount + couponShippingDiscount);
+
+            const discountRow = document.getElementById('couponDiscountSummaryRow');
+            const discountPrice = document.getElementById('couponDiscountSummaryPrice');
+
+            if (couponTotalDiscount > 0) {
+                if (discountRow) discountRow.classList.remove('hidden');
+                if (discountPrice) discountPrice.innerText = `-${couponTotalDiscount} TL`;
+            } else {
+                if (discountRow) discountRow.classList.add('hidden');
+                if (discountPrice) discountPrice.innerText = '0 TL';
+            }
+
+            let finalTotal = roundStoreMoney(itemsSubtotal + shippingCost - couponTotalDiscount);
+            totalElement.innerText = finalTotal + ' TL';
+        }
+
+        function changeView(viewName, pushHistory = true, category = null) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('cartDropdown').classList.remove('open');
+
+            if (viewName === 'home') {
+                document.getElementById('homeView').classList.add('active');
+                document.getElementById('heroBanner').classList.remove('hidden');
+                document.getElementById('sectionTitle').innerText = translations[currentLang].featuredTitle;
+                
+                const randomizedHome = [...productsData].sort(() => 0.5 - Math.random()).slice(0, 20);
+                renderMainProducts(randomizedHome, 'productGrid');
+                document.querySelectorAll('.nav-cat-link').forEach(l => l.classList.remove('active'));
+            } 
+            else if (viewName === 'category') {
+                document.getElementById('homeView').classList.add('active');
+                document.getElementById('heroBanner').classList.add('hidden');
+                document.getElementById('sectionTitle').innerText = category.toUpperCase() + " COLLECTION";
+                const filtered = productsData.filter(item => item.category === category);
+                renderMainProducts(filtered, 'productGrid');
+            }
+            else if (viewName === 'product-detail') {
+                document.getElementById('productDetailView').classList.add('active');
+                document.getElementById('heroBanner').classList.add('hidden');
+            }
+            else if (viewName === 'cart-review') {
+                document.getElementById('cartReviewView').classList.add('active');
+                renderReviewItems(cartItems, 'reviewCartGrid');
+                const randomRecsCart = [...productsData].sort(() => 0.5 - Math.random()).slice(0, 4);
+                renderMainProducts(randomRecsCart, 'recommendationGrid');
+            } 
+            else if (viewName === 'checkout') {
+                document.getElementById('checkoutView').classList.add('active');
+                updateCheckoutSummary();
+                autofillCheckoutForLoggedInCustomer();
+            }
+            else if (viewName === 'success') {
+                document.getElementById('successView').classList.add('active');
+            }
+            else if (viewName === 'contact') {
+                document.getElementById('contactView').classList.add('active');
+            }
+            else if (viewName === 'order-status') {
+                document.getElementById('orderStatusView').classList.add('active');
+            }
+            else if (viewName === 'returns') {
+                document.getElementById('returnsView').classList.add('active');
+            }
+            else if (viewName === 'terms') {
+                document.getElementById('termsView').classList.add('active');
+            }
+            else if (viewName === 'account') {
+                document.getElementById('accountView').classList.add('active');
+                refreshCustomerAccountView();
+            }
+            else {
+                document.getElementById('notFoundView').classList.add('active');
+            }
+
+            if (pushHistory) {
+                history.pushState({ view: viewName, category: category }, "", "#" + viewName);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        async function checkOrderStatus() {
+            const input = document.getElementById('orderStatusNumber');
+            const result = document.getElementById('orderStatusResult');
+            const btn = document.getElementById('checkOrderStatusBtn');
+            const orderNumber = String(input.value || '').trim();
+
+            result.innerHTML = '';
+
+            if (!orderNumber) {
+                result.innerHTML = '<div style="font-size:12px;color:#b00020;font-weight:700;">Enter your order number.</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = currentLang==='tr'?'Kontrol ediliyor...':'Checking...';
+
+            try {
+                const response = await fetch(
+                    "http://localhost:5000/api/order-status/" +
+                    encodeURIComponent(orderNumber)
+                );
+
+                const data = await response.json().catch(() => ({
+                    success: false,
+                    message: 'Unable to check order status'
+                }));
+
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.message || 'Order not found');
+                }
+
+                const order = data.order || {};
+                const status = String(order.status || '').toUpperCase();
+
+                result.innerHTML = `
+                    <div class="checkout-summary-box">
+                        <div class="summary-row">
+                            <span>${currentLang==='tr'?'Sipariş Numarası':'Order Number'}</span>
+                            <span>${escapeHtml(order.order_number || orderNumber)}</span>
+                        </div>
+                        <div class="summary-row" style="border-bottom:0;">
+                            <span>${currentLang==='tr'?'Durum':'Status'}</span>
+                            <span style="color:var(--main-dark);font-weight:900;">${escapeHtml(status)}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML =
+                    '<div style="font-size:12px;color:#b00020;font-weight:700;">' +
+                    escapeHtml(error.message || 'Order not found') +
+                    '</div>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = currentLang==='tr'?'Sipariş Durumunu Kontrol Et':'Check Order Status';
+            }
+        }
+
+        let accountMode = 'login';
+
+        function setAccountMode(mode) {
+            accountMode = mode;
+
+            const nameGroup = document.getElementById('accountNameGroup');
+            const lastNameGroup = document.getElementById('accountLastNameGroup');
+            const birthDateGroup = document.getElementById('accountBirthDateGroup');
+            const confirmGroup = document.getElementById('accountConfirmGroup');
+            const nameInput = document.getElementById('accountName');
+            const lastNameInput = document.getElementById('accountLastName');
+            const birthDateInput = document.getElementById('accountBirthDate');
+            const confirmInput = document.getElementById('accountConfirmPassword');
+            const submitBtn = document.getElementById('accountSubmitBtn');
+            const createBtn = document.getElementById('accountCreateBtn');
+            const switchNote = document.getElementById('accountSwitchNote');
+
+            if (!nameGroup || !lastNameGroup || !birthDateGroup || !confirmGroup || !nameInput || !lastNameInput || !birthDateInput ||
+                !confirmInput || !submitBtn || !createBtn || !switchNote) return;
+
+            const t = translations[currentLang];
+
+            if (mode === 'register') {
+                nameGroup.style.display = 'block';
+                lastNameGroup.style.display = 'block';
+                birthDateGroup.style.display = 'block';
+                confirmGroup.style.display = 'block';
+
+                nameInput.required = true;
+                lastNameInput.required = true;
+                birthDateInput.required = true;
+                confirmInput.required = true;
+
+                submitBtn.innerText = t.createAccountBtn;
+                createBtn.style.display = 'none';
+
+                switchNote.innerHTML = `
+                    <span>${t.existingCustomerText}</span>
+                    <button type="button" class="account-switch-link" onclick="setAccountMode('login')">${t.loginBtn}</button>
+                `;
+            } else {
+                nameGroup.style.display = 'none';
+                lastNameGroup.style.display = 'none';
+                birthDateGroup.style.display = 'none';
+                confirmGroup.style.display = 'none';
+
+                nameInput.required = false;
+                lastNameInput.required = false;
+                birthDateInput.required = false;
+                confirmInput.required = false;
+
+                nameInput.value = '';
+                lastNameInput.value = '';
+                birthDateInput.value = '';
+                confirmInput.value = '';
+
+                submitBtn.innerText = t.loginBtn;
+                createBtn.style.display = 'block';
+
+                switchNote.innerHTML = `
+                    <span>${t.newCustomerText}</span>
+                    <button type="button" class="account-switch-link" onclick="setAccountMode('register')">${t.createAccountLink}</button>
+                `;
+            }
+        }
+
+        const CUSTOMER_TOKEN_KEY = 'stilusCustomerToken';
+        let loggedInCustomer = null;
+
+        function updateAccountNavigation() {
+            const link = document.getElementById('sidebarAccountLink');
+            if (link) {
+                link.textContent = loggedInCustomer ? 'My Account' : 'Register / Log In';
+            }
+        }
+
+        async function customerApi(path, options = {}) {
+            const token = localStorage.getItem(CUSTOMER_TOKEN_KEY) || '';
+            const headers = { ...(options.headers || {}) };
+
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            const response = await fetch(`http://localhost:5000${path}`, {
+                ...options,
+                headers
+            });
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok || !result.success) {
+                const error = new Error(result.message || 'Request failed');
+                error.status = response.status;
+                throw error;
+            }
+
+            return result;
+        }
+
+        function formatAccountBirthDate(value) {
+            if (!value) return '';
+            return String(value).slice(0, 10);
+        }
+
+        function openAccountEdit() {
+            if (!loggedInCustomer) return;
+            document.getElementById('editAccountName').value = loggedInCustomer.name || '';
+            document.getElementById('editAccountLastName').value = loggedInCustomer.last_name || '';
+            document.getElementById('editAccountBirthDate').value = formatAccountBirthDate(loggedInCustomer.birth_date);
+            document.getElementById('accountEditForm').style.display = 'block';
+            document.getElementById('editAccountBtn').style.display = 'none';
+        }
+
+        function cancelAccountEdit() {
+            document.getElementById('accountEditForm').style.display = 'none';
+            document.getElementById('editAccountBtn').style.display = 'block';
+        }
+
+        async function saveAccountEdit() {
+            const name = document.getElementById('editAccountName').value.trim();
+            const lastName = document.getElementById('editAccountLastName').value.trim();
+            const birthDate = document.getElementById('editAccountBirthDate').value;
+            const saveBtn = document.getElementById('saveAccountEditBtn');
+
+            if (!name || !lastName || !birthDate) {
+                alert('First name, last name and date of birth are required.');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                const result = await customerApi('/api/customers/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, lastName, birthDate })
+                });
+
+                loggedInCustomer = result.customer;
+                document.getElementById('myAccountName').textContent = loggedInCustomer.name || '';
+                document.getElementById('myAccountLastName').textContent = loggedInCustomer.last_name || '';
+                document.getElementById('myAccountBirthDate').textContent = formatAccountBirthDate(loggedInCustomer.birth_date);
+                cancelAccountEdit();
+                alert('Account updated successfully.');
+            } catch (error) {
+                alert(error.message || 'Unable to update account. Please try again.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Save Changes';
+            }
+        }
+
+        function logoutCustomer() {
+            localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+            loggedInCustomer = null;
+            updateAccountNavigation();
+            setAccountMode('login');
+            document.getElementById('myAccountContainer').style.display = 'none';
+            document.getElementById('accountAuthContainer').style.display = 'block';
+            changeView('account', true);
+        }
+
+        function fillSavedAddressFields(customer) {
+            if (!customer) return;
+            const values = {
+                myAddress1Label: customer.address1_label || '',
+                myAddress1: customer.address1 || '',
+                myAddress1Country: customer.address1_country || '',
+                myAddress1Phone: customer.address1_phone || '',
+                myAddress2Label: customer.address2_label || '',
+                myAddress2: customer.address2 || '',
+                myAddress2Country: customer.address2_country || '',
+                myAddress2Phone: customer.address2_phone || ''
+            };
+
+            Object.entries(values).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.value = value;
+            });
+        }
+
+        async function saveCustomerAddresses() {
+            const saveBtn = document.getElementById('saveAddressesBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                const payload = {
+                    address1Label: document.getElementById('myAddress1Label').value.trim(),
+                    address1: document.getElementById('myAddress1').value.trim(),
+                    address1Country: document.getElementById('myAddress1Country').value.trim(),
+                    address1Phone: document.getElementById('myAddress1Phone').value.trim(),
+                    address2Label: document.getElementById('myAddress2Label').value.trim(),
+                    address2: document.getElementById('myAddress2').value.trim(),
+                    address2Country: document.getElementById('myAddress2Country').value.trim(),
+                    address2Phone: document.getElementById('myAddress2Phone').value.trim()
+                };
+
+                const result = await customerApi('/api/customers/me/addresses', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                loggedInCustomer = result.customer;
+                fillSavedAddressFields(loggedInCustomer);
+                alert('Addresses saved successfully.');
+            } catch (error) {
+                alert(error.message || 'Unable to save addresses. Please try again.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Save Addresses';
+            }
+        }
+
+        function splitCustomerName(fullName) {
+            const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return { firstName: '', lastName: '' };
+            if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+            return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+        }
+
+        function setCountryIfAvailable(country) {
+            const countrySelect = document.getElementById('countrySelect');
+            if (!countrySelect || !country) return;
+            const option = Array.from(countrySelect.options).find(opt => opt.value === country);
+            if (option) {
+                countrySelect.value = country;
+                updateShippingOptionsByCountry();
+            }
+        }
+
+        function populateCheckoutSavedAddressOptions(customer) {
+            const group = document.getElementById('savedAddressCheckoutGroup');
+            const select = document.getElementById('savedAddressCheckoutSelect');
+            if (!group || !select) return;
+
+            const options = [];
+            if (customer?.address1) {
+                options.push({ value: 'address1', label: customer.address1_label || 'Address 1' });
+            }
+            if (customer?.address2) {
+                options.push({ value: 'address2', label: customer.address2_label || 'Address 2' });
+            }
+
+            if (!options.length) {
+                group.style.display = 'block';
+                select.innerHTML = '<option value="other">Other Address</option>';
+                select.value = 'other';
+                return;
+            }
+
+            group.style.display = 'block';
+            select.innerHTML = options.map(item => `<option value="${item.value}">${item.label}</option>`).join('') +
+                '<option value="other">Other Address</option>';
+            select.value = options[0].value;
+        }
+
+        function applyCheckoutSavedAddress() {
+            const select = document.getElementById('savedAddressCheckoutSelect');
+            if (!select || !loggedInCustomer) return;
+
+            const addressInput = document.getElementById('customerAddressInput');
+            const phoneInput = document.getElementById('customerPhoneInput');
+
+            if (select.value === 'address1') {
+                addressInput.value = loggedInCustomer.address1 || '';
+                phoneInput.value = loggedInCustomer.address1_phone || '';
+                setCountryIfAvailable(loggedInCustomer.address1_country || 'Turkey');
+            } else if (select.value === 'address2') {
+                addressInput.value = loggedInCustomer.address2 || '';
+                phoneInput.value = loggedInCustomer.address2_phone || '';
+                setCountryIfAvailable(loggedInCustomer.address2_country || 'Turkey');
+            } else {
+                addressInput.value = '';
+                phoneInput.value = '';
+                setCountryIfAvailable('Turkey');
+            }
+        }
+
+        async function autofillCheckoutForLoggedInCustomer() {
+            const token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+            const group = document.getElementById('savedAddressCheckoutGroup');
+            if (!token) {
+                if (group) group.style.display = 'none';
+                return;
+            }
+
+            try {
+                const result = await customerApi('/api/customers/me');
+                loggedInCustomer = result.customer;
+                updateAccountNavigation();
+
+                document.getElementById('firstNameInput').value = loggedInCustomer.name || '';
+                document.getElementById('lastNameInput').value = loggedInCustomer.last_name || '';
+                document.getElementById('customerEmailInput').value = loggedInCustomer.email || '';
+
+                populateCheckoutSavedAddressOptions(loggedInCustomer);
+
+                const select = document.getElementById('savedAddressCheckoutSelect');
+                if (select && select.value !== 'other') {
+                    applyCheckoutSavedAddress();
+                }
+            } catch (error) {
+                if (error.status === 401) {
+                    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+                    loggedInCustomer = null;
+                    updateAccountNavigation();
+                }
+                if (group) group.style.display = 'none';
+            }
+        }
+
+        function renderCustomerOrders(orders) {
+            const container = document.getElementById('myAccountOrders');
+            if (!container) return;
+
+            if (!Array.isArray(orders) || orders.length === 0) {
+                container.innerHTML = '<div class="checkout-summary-box" style="font-size:12px;color:var(--text-muted);">No orders yet.</div>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="checkout-summary-box">
+                    <div class="summary-row"><span>Order:</span><span>${order.order_number}</span></div>
+                    <div class="summary-row"><span>Date:</span><span>${new Date(order.created_at).toLocaleDateString()}</span></div>
+                    <div class="summary-row"><span>Status:</span><span>${order.status}</span></div>
+                    ${(order.items || []).map(item => `
+                        <div class="summary-row">
+                            <span>${item.product_name} (${item.size}) ×${item.quantity}</span>
+                            <span>${Number(item.unit_price) * Number(item.quantity)} TL</span>
+                        </div>
+                    `).join('')}
+                    <div class="checkout-total-row"><span>Total:</span><span>${order.total_amount} TL</span></div>
+                </div>
+            `).join('');
+        }
+
+        async function refreshCustomerAccountView() {
+            const authContainer = document.getElementById('accountAuthContainer');
+            const myAccountContainer = document.getElementById('myAccountContainer');
+            const token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+
+            if (!token) {
+                loggedInCustomer = null;
+                if (authContainer) authContainer.style.display = 'block';
+                if (myAccountContainer) myAccountContainer.style.display = 'none';
+                updateAccountNavigation();
+                return;
+            }
+
+            try {
+                const profileResult = await customerApi('/api/customers/me');
+                loggedInCustomer = profileResult.customer;
+
+                if (authContainer) authContainer.style.display = 'none';
+                if (myAccountContainer) myAccountContainer.style.display = 'block';
+
+                document.getElementById('myAccountName').textContent = loggedInCustomer.name || '';
+                document.getElementById('myAccountEmail').textContent = loggedInCustomer.email || '';
+                document.getElementById('myAccountBirthDate').textContent = formatAccountBirthDate(loggedInCustomer.birth_date);
+                fillSavedAddressFields(loggedInCustomer);
+
+                const ordersResult = await customerApi('/api/customers/me/orders');
+                renderCustomerOrders(ordersResult.orders || []);
+                updateAccountNavigation();
+            } catch (error) {
+                if (error.status === 401) {
+                    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+                    loggedInCustomer = null;
+                }
+
+                if (authContainer) authContainer.style.display = 'block';
+                if (myAccountContainer) myAccountContainer.style.display = 'none';
+                updateAccountNavigation();
+            }
+        }
+
+        async function handleAccountSubmit(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('accountEmail').value.trim();
+            const name = document.getElementById('accountName').value.trim();
+            const lastName = document.getElementById('accountLastName').value.trim();
+            const birthDate = document.getElementById('accountBirthDate').value;
+            const password = document.getElementById('accountPassword').value;
+            const confirmPassword = document.getElementById('accountConfirmPassword').value;
+            const submitBtn = document.getElementById('accountSubmitBtn');
+
+            if (accountMode === 'register' && (!name || !lastName || !birthDate)) {
+                alert('First name, last name and date of birth are required.');
+                return;
+            }
+
+            if (accountMode === 'register' && password !== confirmPassword) {
+                alert('Passwords do not match.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = accountMode === 'register' ? 'Creating Account...' : 'Logging In...';
+
+            try {
+                const result = await customerApi(
+                    accountMode === 'register' ? '/api/customers/register' : '/api/customers/login',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(
+                            accountMode === 'register'
+                                ? { name, lastName, email, birthDate, password }
+                                : { email, password }
+                        )
+                    }
+                );
+
+                localStorage.setItem(CUSTOMER_TOKEN_KEY, result.token);
+                loggedInCustomer = result.customer;
+                document.getElementById('accountForm').reset();
+                setAccountMode('login');
+                await refreshCustomerAccountView();
+            } catch (error) {
+                alert(error.message || 'Unable to continue. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        }
+
+        refreshCustomerAccountView();
+
+        async function handleContactSubmit(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('contactForm');
+            const sendBtn = document.getElementById('contactSendBtn');
+            const status = document.getElementById('contactFormStatus');
+
+            const name = document.getElementById('contactName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const message = document.getElementById('contactMessage').value.trim();
+
+            status.textContent = '';
+            sendBtn.disabled = true;
+            sendBtn.innerText = 'Sending...';
+
+            try {
+                const response = await fetch("http://localhost:5000/api/contact", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name, email, message })
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "Failed to send message");
+                }
+
+                form.reset();
+                status.textContent = 'Message sent successfully.';
+                alert(translations[currentLang].msgSentAlert);
+            } catch (error) {
+                console.error("Contact form error:", error);
+                status.textContent = 'Unable to send your message. Please try again.';
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = translations[currentLang].sendBtn || 'Send';
+            }
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const placeOrderBtn = document.getElementById('placeOrderBtn');
+            placeOrderBtn.innerText = "Processing Order...";
+            placeOrderBtn.disabled = true;
+
+            try {
+                if (cartItems.length === 0) {
+                    throw new Error("Cart is empty");
+                }
+
+                const customerFirstName = document.getElementById('firstNameInput').value.trim();
+                const customerLastName = document.getElementById('lastNameInput').value.trim();
+                const customerEmail = document.getElementById('customerEmailInput').value.trim();
+                const customerPhone = document.getElementById('customerPhoneInput').value.trim();
+                const shippingAddress = document.getElementById('customerAddressInput').value.trim();
+                const customerCountry = document.getElementById('countrySelect').value;
+
+                const selectedShipping = document.querySelector('input[name="Shipping Method"]:checked');
+
+                if (!selectedShipping) {
+                    throw new Error("Please select a shipping method");
+                }
+
+                let subtotal = 0;
+
+                cartItems.forEach((item) => {
+                    subtotal += item.rawPrice * (Number(item.quantity) || 1);
+                });
+
+                const standardShippingPrice = Number(storeSettings.standard_shipping) || 0;
+                const expressShippingPrice = Number(storeSettings.express_shipping) || 0;
+                const internationalShippingPrice = Number(storeSettings.international_shipping) || 0;
+                const freeShippingThreshold = Number(storeSettings.free_shipping_threshold) || 0;
+
+                let shippingCost =
+                    selectedShipping.id === "internationalRadio"
+                        ? internationalShippingPrice
+                        : selectedShipping.id === "expressRadio"
+                            ? expressShippingPrice
+                            : standardShippingPrice;
+
+                if (customerCountry === "Turkey" && subtotal > freeShippingThreshold && selectedShipping.id === "standardRadio") {
+                    shippingCost = 0;
+                }
+
+                const totalAmount = subtotal + shippingCost;
+                const orderNumber = `STILUS-${Date.now()}`;
+
+                const orderData = {
+                    orderNumber: orderNumber,
+                    customerFirstName: customerFirstName,
+                    customerLastName: customerLastName,
+                    customerEmail: customerEmail,
+                    customerPhone: customerPhone,
+                    shippingAddress: `${shippingAddress}, ${customerCountry}`,
+                    shippingMethod:
+                        selectedShipping.id === "internationalRadio"
+                            ? "international"
+                            : selectedShipping.id === "expressRadio"
+                                ? "express"
+                                : "standard",
+                    subtotal: subtotal,
+                    shippingCost: shippingCost,
+                    totalAmount: totalAmount,
+                    couponCode: appliedCheckoutCoupon?.code || "",
+                    items: cartItems.map((item) => ({
+                        productId: item.id,
+                        productName: item.name,
+                        size: item.size,
+                        quantity: Number(item.quantity) || 1,
+                        unitPrice: item.rawPrice
+                    }))
+                };
+
+                const response = await fetch("http://localhost:5000/api/orders", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "Failed to create order");
+                }
+
+                document.getElementById('hiddenOrderId').value = result.orderNumber;
+                document.getElementById('hiddenTotalAmount').value = `${result.totalAmount} TL`;
+
+                cartItems = [];
+                clearAppliedCheckoutCoupon(true);
+                updateCartUI();
+
+                document.getElementById('emailSentBadge').innerHTML =
+                    `Order <strong>${result.orderNumber}</strong> was saved successfully.`;
+
+                changeView('success', true);
+            } catch (error) {
+                console.error("Order error:", error);
+                alert("Unable to complete the order. Please try again.");
+
+                placeOrderBtn.innerText = "Complete Order";
+                placeOrderBtn.disabled = false;
+            }
+        }
+
+        function finishOrderProcess(customerEmail, randomOrderId, placeOrderBtn) {
+            placeOrderBtn.innerText = "Complete Order";
+            placeOrderBtn.disabled = false;
+            document.getElementById('emailSentBadge').innerHTML = translations[currentLang].emailSuccessNotice(customerEmail, randomOrderId);
+            cartItems = [];
+            updateCartUI();
+            changeView('success', true);
+        }
+
+        window.addEventListener('popstate', function(event) {
+            if (event.state) {
+                if(event.state.view === 'shop-all') {
+                    showShopAll();
+                } else {
+                    changeView(event.state.view, false, event.state.category);
+                }
+            } else {
+                changeView('home', false);
+            }
+        });
+
+        window.onload = function() {
+            history.replaceState({ view: 'home', category: null }, "", "#home");
+            changeView('home', false);
+            updateShippingOptionsByCountry();
+        };
+
+        function filterCategory(category, linkElement) {
+            document.getElementById('searchInput').value = "";
+            changeView('category', true, category);
+
+            if (linkElement) {
+                document.querySelectorAll('.nav-cat-link').forEach(l => l.classList.remove('active'));
+                linkElement.classList.add('active');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function toggleCart() {
+            document.getElementById('cartDropdown').classList.toggle('open');
+        }
+
+        let cartItems = [];
+
+        function selectSize(button, isAvailable) {
+            if (!isAvailable) return;
+            const container = button.parentElement;
+            const buttons = container.getElementsByClassName('size-btn');
+            for (let btn of buttons) { btn.classList.remove('active'); }
+            button.classList.add('active');
+        }
+
+        function addToCart(button, productId) {
+            const card = button.closest('.product-card');
+            const activeSizeBtn = card.querySelector('.size-btn.active');
+
+            if (!activeSizeBtn) {
+                alert(translations[currentLang].selectSizeAlert);
+                return;
+            }
+
+            const selectedSize = activeSizeBtn.getAttribute('data-size');
+            const product = productsData.find(p => p.id === productId);
+
+            if (!product) {
+                alert(translations[currentLang].outOfStockAlert);
+                return;
+            }
+
+            const availableStock = Number(product.stock[selectedSize]) || 0;
+
+            if (availableStock <= 0) {
+                alert(translations[currentLang].outOfStockAlert);
+                return;
+            }
+
+            // Keep the same product + size as one cart line and increase its quantity.
+            const existingItem = cartItems.find(
+                item => item.id === productId && item.size === selectedSize
+            );
+
+            const currentCartQuantity = existingItem
+                ? (Number(existingItem.quantity) || 1)
+                : 0;
+
+            if (currentCartQuantity >= availableStock) {
+                alert(`Only ${availableStock} item(s) available in size ${selectedSize}.`);
+                return;
+            }
+
+            if (existingItem) {
+                existingItem.quantity = currentCartQuantity + 1;
+            } else {
+                cartItems.push({
+                    name: product.name,
+                    price: product.price,
+                    rawPrice: product.rawPrice,
+                    originalRawPrice: product.originalRawPrice,
+                    img: product.img,
+                    size: selectedSize,
+                    id: productId,
+                    quantity: 1
+                });
+            }
+
+            clearAppliedCheckoutCoupon();
+            updateCartUI();
+
+            if (document.getElementById('cartReviewView').classList.contains('active')) {
+                renderReviewItems(cartItems, 'reviewCartGrid');
+            }
+        }
+
+        function removeFromCart(productId, size) {
+            const index = cartItems.findIndex(
+                item => item.id === productId && item.size === size
+            );
+
+            if (index === -1) return;
+
+            cartItems.splice(index, 1);
+            clearAppliedCheckoutCoupon();
+            updateCartUI();
+
+            const reviewView = document.getElementById('cartReviewView');
+            if (reviewView && reviewView.classList.contains('active')) {
+                renderReviewItems(cartItems, 'reviewCartGrid');
+            }
+
+            const checkoutView = document.getElementById('checkoutView');
+            if (checkoutView && checkoutView.classList.contains('active')) {
+                updateCheckoutSummary();
+            }
+        }
+
+
+        async function applyCheckoutCoupon() {
+            const codeInput = document.getElementById('checkoutCouponCode');
+            const message = document.getElementById('checkoutCouponMessage');
+            const code = (codeInput?.value || '').trim();
+
+            if (!message) return;
+
+            if (!code) {
+                message.textContent = 'Please enter a discount code.';
+                return;
+            }
+
+            const selectedShipping = document.querySelector('input[name="Shipping Method"]:checked');
+            const shippingMethod =
+                selectedShipping?.id === 'internationalRadio'
+                    ? 'international'
+                    : selectedShipping?.id === 'expressRadio'
+                        ? 'express'
+                        : 'standard';
+
+            message.textContent = 'Applying...';
+
+            try {
+                const response = await fetch("http://localhost:5000/api/coupons/apply", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        code,
+                        customerEmail: document.getElementById('customerEmailInput')?.value.trim() || '',
+                        shippingMethod,
+                        items: cartItems.map((item) => ({
+                            productId: item.id,
+                            quantity: Number(item.quantity) || 1
+                        }))
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to apply discount code.');
+                }
+
+                appliedCheckoutCoupon = {
+                    code: result.code,
+                    discountAmount: Number(result.discountAmount) || 0,
+                    shippingDiscount: Number(result.shippingDiscount) || 0,
+                    totalDiscount: Number(result.totalDiscount) || 0
+                };
+
+                message.textContent = `${result.code} applied successfully.`;
+                updateCheckoutSummary();
+            } catch (error) {
+                appliedCheckoutCoupon = null;
+                message.textContent = error.message || 'Unable to apply discount code.';
+                updateCheckoutSummary();
+            }
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cartItemsContainer');
+            const totalQuantity = cartItems.reduce(
+                (total, item) => total + (Number(item.quantity) || 1),
+                0
+            );
+            const cartTotal = cartItems.reduce(
+                (total, item) => total + ((Number(item.rawPrice) || 0) * (Number(item.quantity) || 1)),
+                0
+            );
+
+            document.getElementById('cartCount').innerText = totalQuantity;
+            const cartTotalPrice = document.getElementById('cartTotalPrice');
+            if (cartTotalPrice) cartTotalPrice.innerText = `${cartTotal} TL`;
+
+            if (cartItems.length === 0) {
+                container.innerHTML = `<span class="cart-empty-msg">${translations[currentLang].emptyCart}</span>`;
+                return;
+            }
+
+            let html = '';
+            cartItems.forEach((item) => {
+                const quantity = Number(item.quantity) || 1;
+                html += `
+                    <div class="cart-item-card">
+                        <img src="${item.img}" class="cart-item-img" alt="${item.name}">
+                        <div class="cart-item-info">
+                            <span class="cart-item-name">${item.name} (${item.size}) × ${quantity}</span>
+                            <span class="cart-item-price">${item.rawPrice * quantity} TL</span>
+                        </div>
+                        <button type="button" class="cart-item-remove" aria-label="Remove ${item.name}" onclick="removeFromCart('${item.id}', '${item.size}')">×</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function searchProducts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const title = document.getElementById('sectionTitle');
+
+            if (!query.trim()) {
+                changeView('home', false);
+                return;
+            }
+
+            document.getElementById('heroBanner').classList.add('hidden');
+            title.innerText=currentLang==="tr"?`"${query.toUpperCase()}" İÇİN ARAMA SONUÇLARI`:`SEARCH RESULTS FOR "${query.toUpperCase()}"`;
+            const filtered = productsData.filter(item => item.name.toLowerCase().includes(query));
+            renderMainProducts(filtered, 'productGrid');
+            document.querySelectorAll('.nav-cat-link').forEach(l => l.classList.remove('active'));
+        }
+
+        window.addEventListener('load', function() {
+            prepareStaticTranslations();
+            currentLang = localStorage.getItem('stilusLanguage') === 'tr' ? 'tr' : 'en';
+            applyLanguage();
+        });
+    </script>
+
+</body>
+</html>
