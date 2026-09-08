@@ -21,7 +21,14 @@ const customerSessions = new Map();
 
 const PASSWORD_RESET_TOKEN_DURATION = 60 * 60 * 1000;
 
-const uploadsDirectory = path.join(__dirname, "uploads");
+// Product images must live on persistent storage in production (Render Persistent Disk).
+// Set UPLOADS_DIR to the disk mount path on Render, e.g. /var/data/uploads.
+// Locally, keep using ./uploads so development continues to work as before.
+const uploadsDirectory = process.env.UPLOADS_DIR
+    ? path.resolve(process.env.UPLOADS_DIR)
+    : path.join(__dirname, "uploads");
+
+const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
 
 const storeSettingsFilePath = path.join(
     __dirname,
@@ -607,6 +614,148 @@ async function sendResendEmail({ to, subject, text, html, replyTo }) {
     return result;
 }
 
+
+function getOrderStatusLabel(status) {
+    const labels = {
+        pending: "Order Received",
+        processing: "Order Processing",
+        shipped: "Order Shipped",
+        delivered: "Order Delivered",
+        cancelled: "Order Cancelled"
+    };
+
+    return labels[String(status || "").toLowerCase()] || "Order Update";
+}
+
+function buildOrderEmail({
+    orderNumber,
+    customerFirstName,
+    customerLastName,
+    customerEmail,
+    customerPhone,
+    shippingAddress,
+    shippingMethod,
+    subtotal,
+    shippingCost,
+    totalAmount,
+    status,
+    items = [],
+    isStatusUpdate = false
+}) {
+    const safeName = escapeHtml(customerFirstName || "Customer");
+    const safeLastName = escapeHtml(customerLastName || "");
+    const safeOrderNumber = escapeHtml(orderNumber || "");
+    const safeStatus = escapeHtml(getOrderStatusLabel(status));
+    const safeShippingAddress = escapeHtml(shippingAddress || "");
+    const safeShippingMethod = escapeHtml(shippingMethod || "");
+    const safePhone = escapeHtml(customerPhone || "");
+
+    const rows = items.map((item) => {
+        const name = escapeHtml(item.product_name ?? item.productName ?? "Product");
+        const size = escapeHtml(item.size ?? "");
+        const quantity = Number(item.quantity || 0);
+        const unitPrice = Number(item.unit_price ?? item.unitPrice ?? 0);
+        const lineTotal = quantity * unitPrice;
+
+        return {
+            name,
+            size,
+            quantity,
+            unitPrice,
+            lineTotal
+        };
+    });
+
+    const itemsText = rows.map((item) =>
+        `${item.name} | Size: ${item.size} | Qty: ${item.quantity} | ${item.unitPrice.toFixed(2)} TRY | ${item.lineTotal.toFixed(2)} TRY`
+    ).join("\n");
+
+    const text =
+        `Hi ${customerFirstName || "Customer"},\n\n` +
+        `${isStatusUpdate ? "There is an update to your STIŁUS order." : "Thank you for your STIŁUS order."}\n\n` +
+        `Order: ${orderNumber}\n` +
+        `Status: ${getOrderStatusLabel(status)}\n\n` +
+        `Items:\n${itemsText}\n\n` +
+        `Subtotal: ${Number(subtotal || 0).toFixed(2)} TRY\n` +
+        `Shipping: ${Number(shippingCost || 0).toFixed(2)} TRY\n` +
+        `Total: ${Number(totalAmount || 0).toFixed(2)} TRY\n\n` +
+        `Shipping method: ${shippingMethod || ""}\n` +
+        `Shipping address: ${shippingAddress || ""}\n` +
+        `Phone: ${customerPhone || ""}\n\n` +
+        `STIŁUS`;
+
+    const itemRowsHtml = rows.map((item) => `
+        <tr>
+            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;">${item.name}</td>
+            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:center;">${item.size}</td>
+            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:center;">${item.quantity}</td>
+            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:right;">${item.unitPrice.toFixed(2)} TRY</td>
+            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:right;">${item.lineTotal.toFixed(2)} TRY</td>
+        </tr>
+    `).join("");
+
+    const html = `
+        <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
+            <div style="max-width:680px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;padding:36px;">
+                <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
+                <h1 style="font-size:24px;margin:0 0 10px;">${safeStatus}</h1>
+                <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
+                    Hi ${safeName} ${safeLastName}, ${isStatusUpdate ? "there is an update to your order." : "thank you for your order."}
+                </p>
+
+                <div style="background:#f7f7f7;padding:16px;margin-bottom:24px;">
+                    <div style="font-size:13px;color:#666;margin-bottom:5px;">Order number</div>
+                    <div style="font-size:16px;font-weight:700;">${safeOrderNumber}</div>
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+                    <thead>
+                        <tr>
+                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:left;font-size:12px;">Product</th>
+                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:center;font-size:12px;">Size</th>
+                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:center;font-size:12px;">Qty</th>
+                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:right;font-size:12px;">Price</th>
+                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:right;font-size:12px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemRowsHtml}</tbody>
+                </table>
+
+                <div style="margin-left:auto;max-width:300px;font-size:14px;line-height:1.9;">
+                    <div><span>Subtotal</span><span style="float:right;">${Number(subtotal || 0).toFixed(2)} TRY</span></div>
+                    <div><span>Shipping</span><span style="float:right;">${Number(shippingCost || 0).toFixed(2)} TRY</span></div>
+                    <div style="font-weight:700;font-size:16px;border-top:1px solid #111;margin-top:8px;padding-top:8px;"><span>Total</span><span style="float:right;">${Number(totalAmount || 0).toFixed(2)} TRY</span></div>
+                </div>
+
+                <div style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;font-size:13px;line-height:1.7;color:#555;">
+                    <strong style="color:#111;">Shipping</strong><br>
+                    Method: ${safeShippingMethod}<br>
+                    Address: ${safeShippingAddress}<br>
+                    Phone: ${safePhone}
+                </div>
+            </div>
+        </div>
+    `;
+
+    return { text, html };
+}
+
+async function sendOrderEmail(orderData) {
+    try {
+        const { text, html } = buildOrderEmail(orderData);
+        await sendResendEmail({
+            to: orderData.customerEmail,
+            subject: `STIŁUS - ${getOrderStatusLabel(orderData.status)} - ${orderData.orderNumber}`,
+            text,
+            html
+        });
+        return true;
+    } catch (error) {
+        console.error("Order email error:", error);
+        return false;
+    }
+}
+
 function secureCompare(valueA, valueB) {
     const bufferA = Buffer.from(String(valueA));
     const bufferB = Buffer.from(String(valueB));
@@ -1082,8 +1231,10 @@ app.post(
             });
         }
 
-        const imageUrl =
-             `https://plug-misc-incredible-databases.trycloudflare.com/uploads/${req.file.filename}`;
+        // Use the permanent public URL in production instead of a temporary
+        // Cloudflare tunnel URL. PUBLIC_BASE_URL should be your Render service URL.
+        const baseUrl = publicBaseUrl || `${req.protocol}://${req.get("host")}`;
+        const imageUrl = `${baseUrl}/uploads/${encodeURIComponent(req.file.filename)}`;
 
         res.status(201).json({
             success: true,
@@ -2071,6 +2222,15 @@ app.patch(
                     SELECT
                         id,
                         order_number,
+                        customer_first_name,
+                        customer_last_name,
+                        customer_email,
+                        customer_phone,
+                        shipping_address,
+                        shipping_method,
+                        subtotal,
+                        shipping_cost,
+                        total_amount,
                         status
                     FROM orders
                     WHERE order_number = $1
@@ -2217,9 +2377,40 @@ app.patch(
                     ]
                 );
 
+            const statusItemsResult =
+                await client.query(
+                    `
+                    SELECT
+                        product_name,
+                        size,
+                        quantity,
+                        unit_price
+                    FROM order_items
+                    WHERE order_id = $1
+                    ORDER BY id ASC
+                    `,
+                    [order.id]
+                );
+
             await client.query(
                 "COMMIT"
             );
+
+            await sendOrderEmail({
+                orderNumber: order.order_number,
+                customerFirstName: order.customer_first_name,
+                customerLastName: order.customer_last_name,
+                customerEmail: order.customer_email,
+                customerPhone: order.customer_phone,
+                shippingAddress: order.shipping_address,
+                shippingMethod: order.shipping_method,
+                subtotal: order.subtotal,
+                shippingCost: order.shipping_cost,
+                totalAmount: order.total_amount,
+                status,
+                items: statusItemsResult.rows,
+                isStatusUpdate: true
+            });
 
             res.json({
                 success: true,
@@ -3775,6 +3966,22 @@ app.post(
             await client.query(
                 "COMMIT"
             );
+
+            await sendOrderEmail({
+                orderNumber: orderResult.rows[0].order_number,
+                customerFirstName: customerFirstName.trim(),
+                customerLastName: customerLastName.trim(),
+                customerEmail: customerEmail.trim(),
+                customerPhone: customerPhone.trim(),
+                shippingAddress: shippingAddress.trim(),
+                shippingMethod,
+                subtotal,
+                shippingCost,
+                totalAmount,
+                status: orderResult.rows[0].status,
+                items: verifiedItems,
+                isStatusUpdate: false
+            });
 
             res.status(201).json({
                 success: true,
