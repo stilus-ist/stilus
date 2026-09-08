@@ -465,7 +465,9 @@ async function ensureCustomersTable() {
             ADD COLUMN IF NOT EXISTS address2_label VARCHAR(80),
             ADD COLUMN IF NOT EXISTS address2 TEXT,
             ADD COLUMN IF NOT EXISTS address2_country VARCHAR(120),
-            ADD COLUMN IF NOT EXISTS address2_phone VARCHAR(40)
+            ADD COLUMN IF NOT EXISTS address2_phone VARCHAR(40),
+            ADD COLUMN IF NOT EXISTS password_reset_token_hash VARCHAR(64),
+            ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMPTZ
     `);
 
     await pool.query(`
@@ -688,6 +690,142 @@ function requireAdmin(req, res, next) {
     req.adminToken = token;
 
     next();
+}
+
+
+/* =========================
+   TRANSACTIONAL EMAIL
+========================= */
+
+async function sendTransactionalEmail({ to, subject, text, html, replyTo }) {
+    const resendApiKey = String(process.env.RESEND_API_KEY || "").trim();
+
+    if (!resendApiKey) {
+        throw new Error("RESEND_API_KEY is missing");
+    }
+
+    const recipients = (Array.isArray(to) ? to : [to])
+        .map((value) => String(value || "").trim())
+        .filter(Boolean);
+
+    if (!recipients.length) {
+        throw new Error("Email recipient is missing");
+    }
+
+    const fromEmail =
+        process.env.ORDER_FROM_EMAIL ||
+        process.env.CONTACT_FROM_EMAIL ||
+        "STIŁUS <noreply@stilusist.com>";
+
+    const body = {
+        from: fromEmail,
+        to: recipients,
+        subject: String(subject || "STIŁUS").trim(),
+        text: String(text || "")
+    };
+
+    if (html) body.html = html;
+    if (replyTo) body.reply_to = String(replyTo).trim();
+
+    const emailResponse = await fetch(
+        "https://api.resend.com/emails",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${resendApiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        }
+    );
+
+    const emailResult = await emailResponse.json().catch(() => ({}));
+
+    if (!emailResponse.ok) {
+        console.error("Resend transactional email error:", emailResult);
+        throw new Error(
+            emailResult?.message ||
+            emailResult?.error?.message ||
+            "Resend failed to send email"
+        );
+    }
+
+    return emailResult;
+}
+
+function formatOrderMoney(value) {
+    return `${Number(value || 0).toFixed(2)} TL`;
+}
+
+async function sendOrderConfirmationEmails(order, items) {
+    const customerEmail = String(order.customerEmail || "").trim();
+    const storeEmail = String(
+        process.env.ORDER_NOTIFICATION_EMAIL ||
+        process.env.STORE_ORDER_EMAIL ||
+        process.env.ORDER_EMAIL ||
+        "info@stilusist.com"
+    ).trim();
+
+    const itemLines = (Array.isArray(items) ? items : []).map((item) =>
+        `- ${item.productName} | Size: ${item.size} | Qty: ${item.quantity} | ${formatOrderMoney(Number(item.unitPrice) * Number(item.quantity))}`
+    );
+
+    const details =
+        `Order: #${order.orderNumber}\n` +
+        `Customer: ${order.customerFirstName} ${order.customerLastName}\n` +
+        `Email: ${customerEmail}\n` +
+        `Phone: ${order.customerPhone}\n` +
+        `Shipping method: ${order.shippingMethod}\n` +
+        `Shipping address: ${order.shippingAddress}\n\n` +
+        `Items:\n${itemLines.join("\n")}\n\n` +
+        `Subtotal: ${formatOrderMoney(order.subtotal)}\n` +
+        `Shipping: ${formatOrderMoney(order.shippingCost)}\n` +
+        `Discount: ${formatOrderMoney(order.discountAmount)}\n` +
+        `Total: ${formatOrderMoney(order.totalAmount)}`;
+
+    const customerText =
+        `Thank you for your STIŁUS order.\n\n${details}\n\n` +
+        `We will contact you if there is an update to your order.`;
+
+    const storeText = `New STIŁUS order received.\n\n${details}`;
+
+    const jobs = [];
+
+    if (customerEmail) {
+        jobs.push(
+            sendTransactionalEmail({
+                to: customerEmail,
+                subject: `STIŁUS Order Confirmation - ${order.orderNumber}`,
+                text: customerText
+            })
+        );
+    }
+
+    if (storeEmail) {
+        jobs.push(
+            sendTransactionalEmail({
+                to: storeEmail,
+                subject: `New STIŁUS Order - ${order.orderNumber}`,
+                text: storeText,
+                replyTo: customerEmail || undefined
+            })
+        );
+    }
+
+    if (!jobs.length) return;
+
+    const results = await Promise.allSettled(jobs);
+    const failures = results.filter((result) => result.status === "rejected");
+
+    if (failures.length) {
+        failures.forEach((failure) => {
+            console.error("Order confirmation email error:", failure.reason);
+        });
+    }
+
+    if (failures.length === results.length) {
+        throw new Error("Unable to send order confirmation email");
+    }
 }
 
 
@@ -2416,6 +2554,184 @@ app.post(
     }
 );
 
+app.post(
+    "/api/customers/forgot-password",
+    async (req, res) => {
+        try {
+            const email = String(req.body.email || "").trim().toLowerCase();
+
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Email is required"
+                });
+            }
+
+            const customerResult = await pool.query(
+                "SELECT id, name, email FROM customers WHERE LOWER(email) = LOWER($1) LIMIT 1",
+                [email]
+            );
+
+            // Keep the same response when no account exists so account emails are not exposed.
+            if (!customerResult.rows.length) {
+                return res.json({
+                    success: true,
+                    message: "If an account exists for this email, a password reset link has been sent."
+                });
+            }
+
+            const customer = customerResult.rows[0];
+            const resetToken = crypto.randomBytes(32).toString("hex");
+            const resetTokenHash = crypto
+                .createHash("sha256")
+                .update(resetToken)
+                .digest("hex");
+            const resetExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+            await pool.query(
+                `
+                UPDATE customers
+                SET password_reset_token_hash = $1,
+                    password_reset_expires_at = $2
+                WHERE id = $3
+                `,
+                [resetTokenHash, resetExpiresAt, customer.id]
+            );
+
+            const storefrontUrl = String(
+                process.env.STOREFRONT_URL ||
+                process.env.FRONTEND_URL ||
+                process.env.SITE_URL ||
+                "https://stilusist.com"
+            ).replace(/\/$/, "");
+
+            const resetUrl = `${storefrontUrl}/?reset_token=${encodeURIComponent(resetToken)}`;
+
+            try {
+                await sendTransactionalEmail({
+                    to: customer.email,
+                    subject: "Reset your STIŁUS password",
+                    text:
+                        `Hello ${customer.name || ""},\n\n` +
+                        `Use this link to reset your STIŁUS password:\n\n${resetUrl}\n\n` +
+                        `This link expires in 1 hour. If you did not request this, you can ignore this email.`
+                });
+            } catch (emailError) {
+                console.error("Password reset email error:", emailError);
+
+                await pool.query(
+                    `
+                    UPDATE customers
+                    SET password_reset_token_hash = NULL,
+                        password_reset_expires_at = NULL
+                    WHERE id = $1
+                    `,
+                    [customer.id]
+                );
+
+                return res.status(502).json({
+                    success: false,
+                    message: "Unable to send reset email. Please try again."
+                });
+            }
+
+            return res.json({
+                success: true,
+                message: "If an account exists for this email, a password reset link has been sent."
+            });
+        } catch (error) {
+            console.error("Forgot password error:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Unable to send reset email. Please try again."
+            });
+        }
+    }
+);
+
+app.post(
+    "/api/customers/reset-password",
+    async (req, res) => {
+        try {
+            const token = String(req.body.token || "").trim();
+            const newPassword = String(
+                req.body.newPassword || req.body.password || ""
+            );
+
+            if (!token || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Reset token and new password are required"
+                });
+            }
+
+            if (newPassword.length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Password must be at least 6 characters"
+                });
+            }
+
+            const tokenHash = crypto
+                .createHash("sha256")
+                .update(token)
+                .digest("hex");
+
+            const customerResult = await pool.query(
+                `
+                SELECT id
+                FROM customers
+                WHERE password_reset_token_hash = $1
+                  AND password_reset_expires_at > NOW()
+                LIMIT 1
+                `,
+                [tokenHash]
+            );
+
+            if (!customerResult.rows.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This password reset link is invalid or has expired."
+                });
+            }
+
+            const customerId = customerResult.rows[0].id;
+            const salt = crypto.randomBytes(16).toString("hex");
+            const passwordHash = hashCustomerPassword(newPassword, salt);
+
+            await pool.query(
+                `
+                UPDATE customers
+                SET password_salt = $1,
+                    password_hash = $2,
+                    password_reset_token_hash = NULL,
+                    password_reset_expires_at = NULL
+                WHERE id = $3
+                `,
+                [salt, passwordHash, customerId]
+            );
+
+            for (const [sessionToken, session] of customerSessions.entries()) {
+                if (Number(session?.customerId) === Number(customerId)) {
+                    customerSessions.delete(sessionToken);
+                }
+            }
+
+            return res.json({
+                success: true,
+                message: "Password updated successfully"
+            });
+        } catch (error) {
+            console.error("Reset password error:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Unable to reset password. Please try again."
+            });
+        }
+    }
+);
+
+
 app.get(
     "/api/customers/me",
     requireCustomer,
@@ -3615,6 +3931,28 @@ app.post(
             await client.query(
                 "COMMIT"
             );
+
+            try {
+                await sendOrderConfirmationEmails(
+                    {
+                        orderNumber: orderResult.rows[0].order_number,
+                        customerFirstName: customerFirstName.trim(),
+                        customerLastName: customerLastName.trim(),
+                        customerEmail: customerEmail.trim(),
+                        customerPhone: customerPhone.trim(),
+                        shippingAddress: shippingAddress.trim(),
+                        shippingMethod,
+                        subtotal,
+                        shippingCost,
+                        discountAmount,
+                        totalAmount
+                    },
+                    verifiedItems
+                );
+            } catch (emailError) {
+                // The order has already been committed. Do not cancel a valid order if email delivery fails.
+                console.error("Order email delivery error:", emailError);
+            }
 
             res.status(201).json({
                 success: true,
