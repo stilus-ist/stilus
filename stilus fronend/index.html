@@ -1611,17 +1611,17 @@
             const value = String(url || "").trim();
             if (!value) return "";
             const uploadIndex = value.indexOf("/uploads/");
-            if (uploadIndex !== -1) return "https://stocks-which-survey-salvador.trycloudflare.com" + value.slice(uploadIndex);
-            if (value.startsWith("/uploads/")) return "https://stocks-which-survey-salvador.trycloudflare.com" + value;
+            if (uploadIndex !== -1) return "https://stilus.onrender.com" + value.slice(uploadIndex);
+            if (value.startsWith("/uploads/")) return "https://stilus.onrender.com" + value;
             return value;
         }
 
         async function loadProductsFromBackend() {
             try {
                 const [productsResponse, saleResponse, settingsResponse] = await Promise.all([
-                    fetch("https://stocks-which-survey-salvador.trycloudflare.com/api/products"),
-                    fetch("https://stocks-which-survey-salvador.trycloudflare.com/api/sitewide-sale"),
-                    fetch("https://stocks-which-survey-salvador.trycloudflare.com/api/store-settings")
+                    fetch("https://stilus.onrender.com/api/products"),
+                    fetch("https://stilus.onrender.com/api/sitewide-sale"),
+                    fetch("https://stilus.onrender.com/api/store-settings")
                 ]);
 
                 if (!productsResponse.ok) {
@@ -2127,7 +2127,7 @@
 
             try {
                 const response = await fetch(
-                    "https://stocks-which-survey-salvador.trycloudflare.com/api/order-status/" +
+                    "https://stilus.onrender.com/api/order-status/" +
                     encodeURIComponent(orderNumber)
                 );
 
@@ -2250,7 +2250,7 @@
                 headers.Authorization = `Bearer ${token}`;
             }
 
-            const response = await fetch(`https://stocks-which-survey-salvador.trycloudflare.com${path}`, {
+            const response = await fetch(`https://stilus.onrender.com${path}`, {
                 ...options,
                 headers
             });
@@ -2616,7 +2616,7 @@
             sendBtn.innerText = 'Sending...';
 
             try {
-                const response = await fetch("https://stocks-which-survey-salvador.trycloudflare.com/api/contact", {
+                const response = await fetch("https://stilus.onrender.com/api/contact", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -2718,7 +2718,7 @@
                     }))
                 };
 
-                const response = await fetch("https://stocks-which-survey-salvador.trycloudflare.com/api/orders", {
+                const response = await fetch("https://stilus.onrender.com/api/orders", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -2915,7 +2915,7 @@
             message.textContent = 'Applying...';
 
             try {
-                const response = await fetch("https://stocks-which-survey-salvador.trycloudflare.com/api/coupons/apply", {
+                const response = await fetch("https://stilus.onrender.com/api/coupons/apply", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
