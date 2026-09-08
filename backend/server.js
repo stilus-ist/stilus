@@ -113,6 +113,51 @@ const pool = new Pool({
     port: Number(process.env.DB_PORT)
 });
 
+async function ensureCoreStoreTables() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS products (
+            id VARCHAR(40) PRIMARY KEY,
+            category VARCHAR(120) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            price NUMERIC(14,2) NOT NULL DEFAULT 0,
+            image TEXT NOT NULL,
+            images JSONB NOT NULL DEFAULT '[]'::jsonb,
+            stock JSONB NOT NULL DEFAULT '{}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS orders (
+            id BIGSERIAL PRIMARY KEY,
+            order_number VARCHAR(120) NOT NULL UNIQUE,
+            customer_first_name VARCHAR(150) NOT NULL,
+            customer_last_name VARCHAR(150) NOT NULL,
+            customer_email VARCHAR(254) NOT NULL,
+            customer_phone VARCHAR(60) NOT NULL,
+            shipping_address TEXT NOT NULL,
+            shipping_method VARCHAR(80) NOT NULL,
+            subtotal NUMERIC(14,2) NOT NULL DEFAULT 0,
+            shipping_cost NUMERIC(14,2) NOT NULL DEFAULT 0,
+            total_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+            status VARCHAR(40) NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS order_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+            product_id VARCHAR(40) NOT NULL,
+            product_name VARCHAR(255) NOT NULL,
+            size VARCHAR(80) NOT NULL,
+            quantity INTEGER NOT NULL,
+            unit_price NUMERIC(14,2) NOT NULL DEFAULT 0
+        )
+    `);
+}
+
 async function ensureProductImagesColumn() {
     await pool.query(`
         ALTER TABLE products
@@ -3888,12 +3933,13 @@ app.use(
    START SERVER
 ========================= */
 
-Promise.all([
-    ensureProductImagesColumn(),
-    ensureOrderMoneyColumns(),
-    ensureCustomersTable(),
-    ensureDiscountTables()
-])
+ensureCoreStoreTables()
+    .then(() => Promise.all([
+        ensureProductImagesColumn(),
+        ensureOrderMoneyColumns(),
+        ensureCustomersTable(),
+        ensureDiscountTables()
+    ]))
     .then(() => {
         app.listen(PORT, () => {
             console.log(`STILUS Backend is running on port ${PORT}`);
