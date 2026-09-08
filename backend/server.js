@@ -631,6 +631,209 @@ function requireCustomer(req, res, next) {
     next();
 }
 
+
+async function sendResendEmail({ to, subject, text, html }) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+        console.error("RESEND_API_KEY is missing; email was not sent");
+        return false;
+    }
+
+    const fromEmail =
+        process.env.ORDER_FROM_EMAIL ||
+        process.env.CONTACT_FROM_EMAIL ||
+        "STIŁUS <noreply@stilusist.com>";
+
+    try {
+        const emailResponse = await fetch(
+            "https://api.resend.com/emails",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${resendApiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    from: fromEmail,
+                    to: Array.isArray(to) ? to : [to],
+                    subject,
+                    text,
+                    ...(html ? { html } : {})
+                })
+            }
+        );
+
+        const emailResult = await emailResponse
+            .json()
+            .catch(() => ({}));
+
+        if (!emailResponse.ok) {
+            console.error("Resend email error:", emailResult);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Resend request error:", error);
+        return false;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatEmailMoney(value) {
+    return `${Number(value || 0).toFixed(2)} TL`;
+}
+
+function getOrderStatusLabel(status) {
+    const labels = {
+        pending: "Pending",
+        processing: "Processing",
+        shipped: "Shipped",
+        delivered: "Delivered",
+        cancelled: "Cancelled"
+    };
+
+    return labels[String(status)] || String(status || "Unknown");
+}
+
+async function sendOrderConfirmationEmail({
+    orderNumber,
+    firstName,
+    email,
+    items,
+    subtotal,
+    shippingCost,
+    discountAmount,
+    totalAmount
+}) {
+    const safeFirstName = escapeHtml(firstName);
+    const safeOrderNumber = escapeHtml(orderNumber);
+
+    const itemRows = (Array.isArray(items) ? items : [])
+        .map((item) => {
+            const productName = escapeHtml(item.productName);
+            const size = escapeHtml(item.size);
+            const quantity = Number(item.quantity || 0);
+            const unitPrice = Number(item.unitPrice || 0);
+
+            return `
+                <tr>
+                    <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;">
+                        <strong>${productName}</strong><br>
+                        <span style="color:#666;">Size: ${size} · Qty: ${quantity}</span>
+                    </td>
+                    <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;text-align:right;white-space:nowrap;">
+                        ${formatEmailMoney(unitPrice * quantity)}
+                    </td>
+                </tr>
+            `;
+        })
+        .join("");
+
+    const textItems = (Array.isArray(items) ? items : [])
+        .map((item) =>
+            `- ${item.productName} | Size: ${item.size} | Qty: ${item.quantity} | ${formatEmailMoney(Number(item.unitPrice || 0) * Number(item.quantity || 0))}`
+        )
+        .join("\n");
+
+    const subject = `STIŁUS Order Confirmation - ${orderNumber}`;
+
+    const text =
+        `Hi ${firstName},\n\n` +
+        `Thank you for your order from STIŁUS. Your order has been received and is currently pending.\n\n` +
+        `Order: ${orderNumber}\n\n` +
+        `${textItems}\n\n` +
+        `Subtotal: ${formatEmailMoney(subtotal)}\n` +
+        `Shipping: ${formatEmailMoney(shippingCost)}\n` +
+        `Discount: ${formatEmailMoney(discountAmount)}\n` +
+        `Total: ${formatEmailMoney(totalAmount)}\n\n` +
+        `We will email you when your order status changes.\n\n` +
+        `STIŁUS`;
+
+    const html = `
+        <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
+            <div style="max-width:640px;margin:0 auto;background:#fff;padding:40px;border:1px solid #e5e5e5;">
+                <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
+                <h1 style="font-size:24px;margin:0 0 12px;">Order confirmed</h1>
+                <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">Hi ${safeFirstName}, thank you for shopping with STIŁUS. We received your order and it is currently <strong>Pending</strong>.</p>
+                <div style="background:#f7f7f7;padding:16px;margin-bottom:24px;font-size:14px;">
+                    <strong>Order number</strong><br>
+                    ${safeOrderNumber}
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    <tbody>${itemRows}</tbody>
+                </table>
+                <div style="margin-top:24px;border-top:1px solid #e5e5e5;padding-top:18px;font-size:14px;line-height:1.9;">
+                    <div><span>Subtotal</span><span style="float:right;">${formatEmailMoney(subtotal)}</span></div>
+                    <div><span>Shipping</span><span style="float:right;">${formatEmailMoney(shippingCost)}</span></div>
+                    <div><span>Discount</span><span style="float:right;">-${formatEmailMoney(discountAmount)}</span></div>
+                    <div style="font-size:17px;font-weight:700;margin-top:8px;padding-top:12px;border-top:1px solid #111;">
+                        <span>Total</span><span style="float:right;">${formatEmailMoney(totalAmount)}</span>
+                    </div>
+                </div>
+                <p style="font-size:13px;line-height:1.6;color:#666;margin:28px 0 0;">We will email you when the status of your order changes.</p>
+            </div>
+        </div>
+    `;
+
+    return sendResendEmail({
+        to: email,
+        subject,
+        text,
+        html
+    });
+}
+
+async function sendOrderStatusEmail({
+    orderNumber,
+    firstName,
+    email,
+    status
+}) {
+    const statusLabel = getOrderStatusLabel(status);
+    const subject = `STIŁUS Order ${orderNumber} - ${statusLabel}`;
+
+    const text =
+        `Hi ${firstName},\n\n` +
+        `The status of your STIŁUS order ${orderNumber} has been updated to: ${statusLabel}.\n\n` +
+        `Order: ${orderNumber}\n` +
+        `Status: ${statusLabel}\n\n` +
+        `Thank you for shopping with STIŁUS.`;
+
+    const html = `
+        <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
+            <div style="max-width:640px;margin:0 auto;background:#fff;padding:40px;border:1px solid #e5e5e5;">
+                <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
+                <h1 style="font-size:24px;margin:0 0 12px;">Order status updated</h1>
+                <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">Hi ${escapeHtml(firstName)}, the status of your order has changed.</p>
+                <div style="background:#f7f7f7;padding:20px;margin-bottom:24px;">
+                    <div style="font-size:13px;color:#666;margin-bottom:6px;">Order number</div>
+                    <div style="font-size:18px;font-weight:700;margin-bottom:18px;">${escapeHtml(orderNumber)}</div>
+                    <div style="font-size:13px;color:#666;margin-bottom:6px;">Current status</div>
+                    <div style="font-size:20px;font-weight:700;">${escapeHtml(statusLabel)}</div>
+                </div>
+                <p style="font-size:13px;line-height:1.6;color:#666;margin:0;">Thank you for shopping with STIŁUS.</p>
+            </div>
+        </div>
+    `;
+
+    return sendResendEmail({
+        to: email,
+        subject,
+        text,
+        html
+    });
+}
+
 function requireAdmin(req, res, next) {
     cleanExpiredSessions();
 
@@ -1994,6 +2197,8 @@ app.patch(
                     SELECT
                         id,
                         order_number,
+                        customer_first_name,
+                        customer_email,
                         status
                     FROM orders
                     WHERE order_number = $1
@@ -2143,6 +2348,17 @@ app.patch(
             await client.query(
                 "COMMIT"
             );
+
+            // Email the customer only after the database transaction succeeds.
+            // Email failures are logged but never undo a successful status change.
+            if (previousStatus !== status && order.customer_email) {
+                await sendOrderStatusEmail({
+                    orderNumber: order.order_number,
+                    firstName: order.customer_first_name,
+                    email: order.customer_email,
+                    status
+                });
+            }
 
             res.json({
                 success: true,
@@ -3536,6 +3752,20 @@ app.post(
             await client.query(
                 "COMMIT"
             );
+
+            // Send the confirmation only after the order, coupon redemption,
+            // and stock changes have all been committed successfully.
+            // A Resend failure must not turn a successful order into an error.
+            await sendOrderConfirmationEmail({
+                orderNumber: orderResult.rows[0].order_number,
+                firstName: customerFirstName.trim(),
+                email: customerEmail.trim(),
+                items: verifiedItems,
+                subtotal,
+                shippingCost,
+                discountAmount,
+                totalAmount
+            });
 
             res.status(201).json({
                 success: true,
