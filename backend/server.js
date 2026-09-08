@@ -19,6 +19,8 @@ const adminSessions = new Map();
 const CUSTOMER_SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
 const customerSessions = new Map();
 
+const PASSWORD_RESET_TOKEN_DURATION = 60 * 60 * 1000;
+
 const uploadsDirectory = path.join(__dirname, "uploads");
 
 const storeSettingsFilePath = path.join(
@@ -487,6 +489,22 @@ async function ensureCustomersTable() {
         CREATE UNIQUE INDEX IF NOT EXISTS customers_email_lower_unique
         ON customers (LOWER(email))
     `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id BIGSERIAL PRIMARY KEY,
+            customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+            token_hash VARCHAR(128) NOT NULL UNIQUE,
+            expires_at TIMESTAMPTZ NOT NULL,
+            used_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS password_reset_tokens_customer_idx
+        ON password_reset_tokens (customer_id)
+    `);
 }
 
 const allowedImageTypes = new Set([
@@ -589,6 +607,10 @@ function hashCustomerPassword(password, salt) {
     ).toString("hex");
 }
 
+function hashPasswordResetToken(token) {
+    return crypto.createHash("sha256").update(String(token)).digest("hex");
+}
+
 function createCustomerSession(customerId) {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + CUSTOMER_SESSION_DURATION;
@@ -629,209 +651,6 @@ function requireCustomer(req, res, next) {
     req.customerId = session.customerId;
     req.customerToken = token;
     next();
-}
-
-
-async function sendResendEmail({ to, subject, text, html }) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-
-    if (!resendApiKey) {
-        console.error("RESEND_API_KEY is missing; email was not sent");
-        return false;
-    }
-
-    const fromEmail =
-        process.env.ORDER_FROM_EMAIL ||
-        process.env.CONTACT_FROM_EMAIL ||
-        "STIŁUS <noreply@stilusist.com>";
-
-    try {
-        const emailResponse = await fetch(
-            "https://api.resend.com/emails",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${resendApiKey}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    from: fromEmail,
-                    to: Array.isArray(to) ? to : [to],
-                    subject,
-                    text,
-                    ...(html ? { html } : {})
-                })
-            }
-        );
-
-        const emailResult = await emailResponse
-            .json()
-            .catch(() => ({}));
-
-        if (!emailResponse.ok) {
-            console.error("Resend email error:", emailResult);
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error("Resend request error:", error);
-        return false;
-    }
-}
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function formatEmailMoney(value) {
-    return `${Number(value || 0).toFixed(2)} TL`;
-}
-
-function getOrderStatusLabel(status) {
-    const labels = {
-        pending: "Pending",
-        processing: "Processing",
-        shipped: "Shipped",
-        delivered: "Delivered",
-        cancelled: "Cancelled"
-    };
-
-    return labels[String(status)] || String(status || "Unknown");
-}
-
-async function sendOrderConfirmationEmail({
-    orderNumber,
-    firstName,
-    email,
-    items,
-    subtotal,
-    shippingCost,
-    discountAmount,
-    totalAmount
-}) {
-    const safeFirstName = escapeHtml(firstName);
-    const safeOrderNumber = escapeHtml(orderNumber);
-
-    const itemRows = (Array.isArray(items) ? items : [])
-        .map((item) => {
-            const productName = escapeHtml(item.productName);
-            const size = escapeHtml(item.size);
-            const quantity = Number(item.quantity || 0);
-            const unitPrice = Number(item.unitPrice || 0);
-
-            return `
-                <tr>
-                    <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;">
-                        <strong>${productName}</strong><br>
-                        <span style="color:#666;">Size: ${size} · Qty: ${quantity}</span>
-                    </td>
-                    <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;text-align:right;white-space:nowrap;">
-                        ${formatEmailMoney(unitPrice * quantity)}
-                    </td>
-                </tr>
-            `;
-        })
-        .join("");
-
-    const textItems = (Array.isArray(items) ? items : [])
-        .map((item) =>
-            `- ${item.productName} | Size: ${item.size} | Qty: ${item.quantity} | ${formatEmailMoney(Number(item.unitPrice || 0) * Number(item.quantity || 0))}`
-        )
-        .join("\n");
-
-    const subject = `STIŁUS Order Confirmation - ${orderNumber}`;
-
-    const text =
-        `Hi ${firstName},\n\n` +
-        `Thank you for your order from STIŁUS. Your order has been received and is currently pending.\n\n` +
-        `Order: ${orderNumber}\n\n` +
-        `${textItems}\n\n` +
-        `Subtotal: ${formatEmailMoney(subtotal)}\n` +
-        `Shipping: ${formatEmailMoney(shippingCost)}\n` +
-        `Discount: ${formatEmailMoney(discountAmount)}\n` +
-        `Total: ${formatEmailMoney(totalAmount)}\n\n` +
-        `We will email you when your order status changes.\n\n` +
-        `STIŁUS`;
-
-    const html = `
-        <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
-            <div style="max-width:640px;margin:0 auto;background:#fff;padding:40px;border:1px solid #e5e5e5;">
-                <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
-                <h1 style="font-size:24px;margin:0 0 12px;">Order confirmed</h1>
-                <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">Hi ${safeFirstName}, thank you for shopping with STIŁUS. We received your order and it is currently <strong>Pending</strong>.</p>
-                <div style="background:#f7f7f7;padding:16px;margin-bottom:24px;font-size:14px;">
-                    <strong>Order number</strong><br>
-                    ${safeOrderNumber}
-                </div>
-                <table style="width:100%;border-collapse:collapse;font-size:14px;">
-                    <tbody>${itemRows}</tbody>
-                </table>
-                <div style="margin-top:24px;border-top:1px solid #e5e5e5;padding-top:18px;font-size:14px;line-height:1.9;">
-                    <div><span>Subtotal</span><span style="float:right;">${formatEmailMoney(subtotal)}</span></div>
-                    <div><span>Shipping</span><span style="float:right;">${formatEmailMoney(shippingCost)}</span></div>
-                    <div><span>Discount</span><span style="float:right;">-${formatEmailMoney(discountAmount)}</span></div>
-                    <div style="font-size:17px;font-weight:700;margin-top:8px;padding-top:12px;border-top:1px solid #111;">
-                        <span>Total</span><span style="float:right;">${formatEmailMoney(totalAmount)}</span>
-                    </div>
-                </div>
-                <p style="font-size:13px;line-height:1.6;color:#666;margin:28px 0 0;">We will email you when the status of your order changes.</p>
-            </div>
-        </div>
-    `;
-
-    return sendResendEmail({
-        to: email,
-        subject,
-        text,
-        html
-    });
-}
-
-async function sendOrderStatusEmail({
-    orderNumber,
-    firstName,
-    email,
-    status
-}) {
-    const statusLabel = getOrderStatusLabel(status);
-    const subject = `STIŁUS Order ${orderNumber} - ${statusLabel}`;
-
-    const text =
-        `Hi ${firstName},\n\n` +
-        `The status of your STIŁUS order ${orderNumber} has been updated to: ${statusLabel}.\n\n` +
-        `Order: ${orderNumber}\n` +
-        `Status: ${statusLabel}\n\n` +
-        `Thank you for shopping with STIŁUS.`;
-
-    const html = `
-        <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
-            <div style="max-width:640px;margin:0 auto;background:#fff;padding:40px;border:1px solid #e5e5e5;">
-                <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
-                <h1 style="font-size:24px;margin:0 0 12px;">Order status updated</h1>
-                <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">Hi ${escapeHtml(firstName)}, the status of your order has changed.</p>
-                <div style="background:#f7f7f7;padding:20px;margin-bottom:24px;">
-                    <div style="font-size:13px;color:#666;margin-bottom:6px;">Order number</div>
-                    <div style="font-size:18px;font-weight:700;margin-bottom:18px;">${escapeHtml(orderNumber)}</div>
-                    <div style="font-size:13px;color:#666;margin-bottom:6px;">Current status</div>
-                    <div style="font-size:20px;font-weight:700;">${escapeHtml(statusLabel)}</div>
-                </div>
-                <p style="font-size:13px;line-height:1.6;color:#666;margin:0;">Thank you for shopping with STIŁUS.</p>
-            </div>
-        </div>
-    `;
-
-    return sendResendEmail({
-        to: email,
-        subject,
-        text,
-        html
-    });
 }
 
 function requireAdmin(req, res, next) {
@@ -2197,8 +2016,6 @@ app.patch(
                     SELECT
                         id,
                         order_number,
-                        customer_first_name,
-                        customer_email,
                         status
                     FROM orders
                     WHERE order_number = $1
@@ -2349,17 +2166,6 @@ app.patch(
                 "COMMIT"
             );
 
-            // Email the customer only after the database transaction succeeds.
-            // Email failures are logged but never undo a successful status change.
-            if (previousStatus !== status && order.customer_email) {
-                await sendOrderStatusEmail({
-                    orderNumber: order.order_number,
-                    firstName: order.customer_first_name,
-                    email: order.customer_email,
-                    status
-                });
-            }
-
             res.json({
                 success: true,
                 message:
@@ -2476,6 +2282,169 @@ app.post(
                 success: false,
                 message: error.message || "Failed to create account"
             });
+        }
+    }
+);
+
+app.post(
+    "/api/customers/forgot-password",
+    async (req, res) => {
+        try {
+            const email = String(req.body.email || "").trim().toLowerCase();
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please enter a valid email address"
+                });
+            }
+
+            const genericResponse = {
+                success: true,
+                message: "If an account exists for this email, a password reset link has been sent."
+            };
+
+            const customerResult = await pool.query(
+                `SELECT id, name, email FROM customers WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+                [email]
+            );
+
+            if (!customerResult.rows.length) {
+                return res.json(genericResponse);
+            }
+
+            const customer = customerResult.rows[0];
+            const rawToken = crypto.randomBytes(32).toString("hex");
+            const tokenHash = hashPasswordResetToken(rawToken);
+            const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_DURATION);
+
+            await pool.query(
+                `UPDATE password_reset_tokens SET used_at = NOW() WHERE customer_id = $1 AND used_at IS NULL`,
+                [customer.id]
+            );
+
+            await pool.query(
+                `INSERT INTO password_reset_tokens (customer_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+                [customer.id, tokenHash, expiresAt]
+            );
+
+            const resetBaseUrl = String(process.env.FRONTEND_URL || "https://stilusist.com").replace(/\/$/, "");
+            const resetUrl = `${resetBaseUrl}/?reset_token=${encodeURIComponent(rawToken)}`;
+
+            const safeName = escapeHtml(customer.name || "");
+            const safeResetUrl = escapeHtml(resetUrl);
+
+            const text =
+                `Hi ${customer.name || ""},\n\n` +
+                `We received a request to reset your STIŁUS password.\n\n` +
+                `Use this link to create a new password:\n${resetUrl}\n\n` +
+                `This link expires in 1 hour and can only be used once.\n\n` +
+                `If you did not request a password reset, you can ignore this email.\n\n` +
+                `STIŁUS`;
+
+            const html = `
+                <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
+                    <div style="max-width:640px;margin:0 auto;background:#fff;padding:40px;border:1px solid #e5e5e5;">
+                        <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
+                        <h1 style="font-size:24px;margin:0 0 12px;">Reset your password</h1>
+                        <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">Hi ${safeName}, we received a request to reset your STIŁUS password.</p>
+                        <a href="${safeResetUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:700;">Create New Password</a>
+                        <p style="font-size:13px;line-height:1.6;color:#666;margin:24px 0 0;">This link expires in 1 hour and can only be used once. If you did not request a password reset, you can ignore this email.</p>
+                    </div>
+                </div>
+            `;
+
+            await sendResendEmail({
+                to: customer.email,
+                subject: "STIŁUS - Reset Your Password",
+                text,
+                html
+            });
+
+            return res.json(genericResponse);
+        } catch (error) {
+            console.error("Forgot password error:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Unable to process password reset request"
+            });
+        }
+    }
+);
+
+app.post(
+    "/api/customers/reset-password",
+    async (req, res) => {
+        let client;
+
+        try {
+            const token = String(req.body.token || "").trim();
+            const newPassword = String(req.body.newPassword || "");
+
+            if (!token || !newPassword) {
+                return res.status(400).json({ success: false, message: "Reset token and new password are required" });
+            }
+
+            if (newPassword.length < 6) {
+                return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+            }
+
+            const tokenHash = hashPasswordResetToken(token);
+            client = await pool.connect();
+            await client.query("BEGIN");
+
+            const tokenResult = await client.query(
+                `SELECT id, customer_id, expires_at, used_at FROM password_reset_tokens WHERE token_hash = $1 LIMIT 1 FOR UPDATE`,
+                [tokenHash]
+            );
+
+            if (!tokenResult.rows.length) {
+                await client.query("ROLLBACK");
+                return res.status(400).json({ success: false, message: "This password reset link is invalid or has expired" });
+            }
+
+            const resetToken = tokenResult.rows[0];
+
+            if (resetToken.used_at || new Date(resetToken.expires_at).getTime() <= Date.now()) {
+                await client.query("ROLLBACK");
+                return res.status(400).json({ success: false, message: "This password reset link is invalid or has expired" });
+            }
+
+            const salt = crypto.randomBytes(16).toString("hex");
+            const passwordHash = hashCustomerPassword(newPassword, salt);
+
+            const customerResult = await client.query(
+                `UPDATE customers SET password_salt = $1, password_hash = $2 WHERE id = $3 RETURNING id`,
+                [salt, passwordHash, resetToken.customer_id]
+            );
+
+            if (!customerResult.rows.length) {
+                await client.query("ROLLBACK");
+                return res.status(404).json({ success: false, message: "Customer account not found" });
+            }
+
+            await client.query(
+                `UPDATE password_reset_tokens SET used_at = NOW() WHERE customer_id = $1 AND used_at IS NULL`,
+                [resetToken.customer_id]
+            );
+
+            await client.query("COMMIT");
+
+            for (const [sessionToken, session] of customerSessions.entries()) {
+                if (session && session.customerId === resetToken.customer_id) {
+                    customerSessions.delete(sessionToken);
+                }
+            }
+
+            return res.json({ success: true, message: "Password reset successfully" });
+        } catch (error) {
+            if (client) {
+                try { await client.query("ROLLBACK"); } catch (rollbackError) { console.error("Password reset rollback error:", rollbackError); }
+            }
+            console.error("Reset password error:", error);
+            return res.status(500).json({ success: false, message: "Unable to reset password" });
+        } finally {
+            if (client) client.release();
         }
     }
 );
@@ -3752,20 +3721,6 @@ app.post(
             await client.query(
                 "COMMIT"
             );
-
-            // Send the confirmation only after the order, coupon redemption,
-            // and stock changes have all been committed successfully.
-            // A Resend failure must not turn a successful order into an error.
-            await sendOrderConfirmationEmail({
-                orderNumber: orderResult.rows[0].order_number,
-                firstName: customerFirstName.trim(),
-                email: customerEmail.trim(),
-                items: verifiedItems,
-                subtotal,
-                shippingCost,
-                discountAmount,
-                totalAmount
-            });
 
             res.status(201).json({
                 success: true,
