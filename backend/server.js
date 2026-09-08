@@ -1394,8 +1394,7 @@ app.post(
                         price,
                         image,
                         images,
-                        stock,
-                        created_at
+                        stock,        created_at
                     `,
                     [
                         cleanId,
@@ -2791,8 +2790,7 @@ app.get(
                                 'quantity', oi.quantity,
                                 'unit_price', oi.unit_price
                             ) ORDER BY oi.id
-                        ) FILTER (WHERE oi.id IS NOT NULL),
-                        '[]'::json
+                        ) FILTER (WHERE oi.id IS NOT NULL),      '[]'::json
                     ) AS items
                 FROM orders o
                 LEFT JOIN order_items oi ON oi.order_id = o.id
