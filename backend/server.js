@@ -6,12 +6,13 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { Pool, types } = require("pg");
+const { S3Client, PutObjectCommand, HeadObjectCommand } = require("@aws-sdk/client-s3");
 
 // Keep PostgreSQL DATE values as YYYY-MM-DD strings so dates of birth never shift by timezone.
 types.setTypeParser(1082, (value) => value);
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = 5000;
 
 const ADMIN_SESSION_DURATION = 8 * 60 * 60 * 1000;
 const adminSessions = new Map();
@@ -19,16 +20,28 @@ const adminSessions = new Map();
 const CUSTOMER_SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
 const customerSessions = new Map();
 
-const PASSWORD_RESET_TOKEN_DURATION = 60 * 60 * 1000;
+const uploadsDirectory = path.join(__dirname, "uploads");
 
-// Product images must live on persistent storage in production (Render Persistent Disk).
-// Set UPLOADS_DIR to the disk mount path on Render, e.g. /var/data/uploads.
-// Locally, keep using ./uploads so development continues to work as before.
-const uploadsDirectory = process.env.UPLOADS_DIR
-    ? path.resolve(process.env.UPLOADS_DIR)
-    : path.join(__dirname, "uploads");
+// Cloudflare R2 configuration. Product images are stored in R2 so they survive Render restarts and redeploys.
+const R2_ACCOUNT_ID = String(process.env.R2_ACCOUNT_ID || process.env.CLOUDFLARE_R2_ACCOUNT_ID || "").trim();
+const R2_ACCESS_KEY_ID = String(process.env.R2_ACCESS_KEY_ID || process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || "").trim();
+const R2_SECRET_ACCESS_KEY = String(process.env.R2_SECRET_ACCESS_KEY || process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || "").trim();
+const R2_BUCKET_NAME = String(process.env.R2_BUCKET_NAME || process.env.CLOUDFLARE_R2_BUCKET_NAME || "stilus-images").trim();
+const R2_PUBLIC_URL = String(
+    process.env.R2_PUBLIC_URL ||
+    "https://pub-458b056383d9497fbdb928840693d424.r2.dev"
+).replace(/\/$/, "");
 
-const publicBaseUrl = String(process.env.PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
+const r2Client = R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY
+    ? new S3Client({
+        region: "auto",
+        endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+            accessKeyId: R2_ACCESS_KEY_ID,
+            secretAccessKey: R2_SECRET_ACCESS_KEY
+        }
+    })
+    : null;
 
 const storeSettingsFilePath = path.join(
     __dirname,
@@ -121,51 +134,6 @@ const pool = new Pool({
     password: process.env.DB_PASSWORD,
     port: Number(process.env.DB_PORT)
 });
-
-async function ensureCoreStoreTables() {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS products (
-            id VARCHAR(40) PRIMARY KEY,
-            category VARCHAR(120) NOT NULL,
-            name VARCHAR(255) NOT NULL,
-            price NUMERIC(14,2) NOT NULL DEFAULT 0,
-            image TEXT NOT NULL,
-            images JSONB NOT NULL DEFAULT '[]'::jsonb,
-            stock JSONB NOT NULL DEFAULT '{}'::jsonb,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS orders (
-            id BIGSERIAL PRIMARY KEY,
-            order_number VARCHAR(120) NOT NULL UNIQUE,
-            customer_first_name VARCHAR(150) NOT NULL,
-            customer_last_name VARCHAR(150) NOT NULL,
-            customer_email VARCHAR(254) NOT NULL,
-            customer_phone VARCHAR(60) NOT NULL,
-            shipping_address TEXT NOT NULL,
-            shipping_method VARCHAR(80) NOT NULL,
-            subtotal NUMERIC(14,2) NOT NULL DEFAULT 0,
-            shipping_cost NUMERIC(14,2) NOT NULL DEFAULT 0,
-            total_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
-            status VARCHAR(40) NOT NULL DEFAULT 'pending',
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS order_items (
-            id BIGSERIAL PRIMARY KEY,
-            order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-            product_id VARCHAR(40) NOT NULL,
-            product_name VARCHAR(255) NOT NULL,
-            size VARCHAR(80) NOT NULL,
-            quantity INTEGER NOT NULL,
-            unit_price NUMERIC(14,2) NOT NULL DEFAULT 0
-        )
-    `);
-}
 
 async function ensureProductImagesColumn() {
     await pool.query(`
@@ -496,22 +464,6 @@ async function ensureCustomersTable() {
         CREATE UNIQUE INDEX IF NOT EXISTS customers_email_lower_unique
         ON customers (LOWER(email))
     `);
-
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS password_reset_tokens (
-            id BIGSERIAL PRIMARY KEY,
-            customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-            token_hash VARCHAR(128) NOT NULL UNIQUE,
-            expires_at TIMESTAMPTZ NOT NULL,
-            used_at TIMESTAMPTZ,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-    `);
-
-    await pool.query(`
-        CREATE INDEX IF NOT EXISTS password_reset_tokens_customer_idx
-        ON password_reset_tokens (customer_id)
-    `);
 }
 
 const allowedImageTypes = new Set([
@@ -521,30 +473,11 @@ const allowedImageTypes = new Set([
     "image/gif"
 ]);
 
-const storage = multer.diskStorage({
-    destination: (req, file, callback) => {
-        callback(null, uploadsDirectory);
-    },
-
-    filename: (req, file, callback) => {
-        const extension = path
-            .extname(file.originalname)
-            .toLowerCase();
-
-        const filename =
-            `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${extension}`;
-
-        callback(null, filename);
-    }
-});
-
 const upload = multer({
-    storage,
-
+    storage: multer.memoryStorage(),
     limits: {
         fileSize: 10 * 1024 * 1024
     },
-
     fileFilter: (req, file, callback) => {
         if (!allowedImageTypes.has(file.mimetype)) {
             return callback(
@@ -558,202 +491,42 @@ const upload = multer({
     }
 });
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/\'/g, "&#39;");
+function createR2ObjectKey(originalName) {
+    const extension = path.extname(originalName || "").toLowerCase();
+    return `products/${Date.now()}-${crypto.randomBytes(8).toString("hex")}${extension}`;
 }
 
-async function sendResendEmail({ to, subject, text, html, replyTo }) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-
-    if (!resendApiKey) {
-        throw new Error("Email service is not configured");
-    }
-
-    const fromEmail =
-        process.env.CONTACT_FROM_EMAIL ||
-        "STIŁUS <noreply@stilusist.com>";
-
-    const payload = {
-        from: fromEmail,
-        to: Array.isArray(to) ? to : [to],
-        subject: String(subject || "").slice(0, 998),
-        text: String(text || "")
-    };
-
-    if (html) payload.html = String(html);
-    if (replyTo) payload.reply_to = String(replyTo);
-
-    const response = await fetch(
-        "https://api.resend.com/emails",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${resendApiKey}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        }
-    );
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        console.error("Resend email error:", result);
+async function uploadImageToR2(file) {
+    if (!r2Client) {
         throw new Error(
-            result?.message ||
-            result?.error ||
-            "Failed to send email"
+            "R2 storage is not configured. Add R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY to Render."
         );
     }
 
-    return result;
-}
+    const key = createR2ObjectKey(file.originalname);
 
+    await r2Client.send(
+        new PutObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: key,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+            CacheControl: "public, max-age=31536000, immutable"
+        })
+    );
 
-function getOrderStatusLabel(status) {
-    const labels = {
-        pending: "Order Received",
-        processing: "Order Processing",
-        shipped: "Order Shipped",
-        delivered: "Order Delivered",
-        cancelled: "Order Cancelled"
+    await r2Client.send(
+        new HeadObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: key
+        })
+    );
+
+    return {
+        key,
+        bucket: R2_BUCKET_NAME,
+        imageUrl: `${R2_PUBLIC_URL}/${key.split("/").map(encodeURIComponent).join("/")}`
     };
-
-    return labels[String(status || "").toLowerCase()] || "Order Update";
-}
-
-function buildOrderEmail({
-    orderNumber,
-    customerFirstName,
-    customerLastName,
-    customerEmail,
-    customerPhone,
-    shippingAddress,
-    shippingMethod,
-    subtotal,
-    shippingCost,
-    totalAmount,
-    status,
-    items = [],
-    isStatusUpdate = false
-}) {
-    const safeName = escapeHtml(customerFirstName || "Customer");
-    const safeLastName = escapeHtml(customerLastName || "");
-    const safeOrderNumber = escapeHtml(orderNumber || "");
-    const safeStatus = escapeHtml(getOrderStatusLabel(status));
-    const safeShippingAddress = escapeHtml(shippingAddress || "");
-    const safeShippingMethod = escapeHtml(shippingMethod || "");
-    const safePhone = escapeHtml(customerPhone || "");
-
-    const rows = items.map((item) => {
-        const name = escapeHtml(item.product_name ?? item.productName ?? "Product");
-        const size = escapeHtml(item.size ?? "");
-        const quantity = Number(item.quantity || 0);
-        const unitPrice = Number(item.unit_price ?? item.unitPrice ?? 0);
-        const lineTotal = quantity * unitPrice;
-
-        return {
-            name,
-            size,
-            quantity,
-            unitPrice,
-            lineTotal
-        };
-    });
-
-    const itemsText = rows.map((item) =>
-        `${item.name} | Size: ${item.size} | Qty: ${item.quantity} | ${item.unitPrice.toFixed(2)} TRY | ${item.lineTotal.toFixed(2)} TRY`
-    ).join("\n");
-
-    const text =
-        `Hi ${customerFirstName || "Customer"},\n\n` +
-        `${isStatusUpdate ? "There is an update to your STIŁUS order." : "Thank you for your STIŁUS order."}\n\n` +
-        `Order: ${orderNumber}\n` +
-        `Status: ${getOrderStatusLabel(status)}\n\n` +
-        `Items:\n${itemsText}\n\n` +
-        `Subtotal: ${Number(subtotal || 0).toFixed(2)} TRY\n` +
-        `Shipping: ${Number(shippingCost || 0).toFixed(2)} TRY\n` +
-        `Total: ${Number(totalAmount || 0).toFixed(2)} TRY\n\n` +
-        `Shipping method: ${shippingMethod || ""}\n` +
-        `Shipping address: ${shippingAddress || ""}\n` +
-        `Phone: ${customerPhone || ""}\n\n` +
-        `STIŁUS`;
-
-    const itemRowsHtml = rows.map((item) => `
-        <tr>
-            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;">${item.name}</td>
-            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:center;">${item.size}</td>
-            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:center;">${item.quantity}</td>
-            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:right;">${item.unitPrice.toFixed(2)} TRY</td>
-            <td style="padding:12px 8px;border-bottom:1px solid #eee;font-size:14px;text-align:right;">${item.lineTotal.toFixed(2)} TRY</td>
-        </tr>
-    `).join("");
-
-    const html = `
-        <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
-            <div style="max-width:680px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;padding:36px;">
-                <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
-                <h1 style="font-size:24px;margin:0 0 10px;">${safeStatus}</h1>
-                <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
-                    Hi ${safeName} ${safeLastName}, ${isStatusUpdate ? "there is an update to your order." : "thank you for your order."}
-                </p>
-
-                <div style="background:#f7f7f7;padding:16px;margin-bottom:24px;">
-                    <div style="font-size:13px;color:#666;margin-bottom:5px;">Order number</div>
-                    <div style="font-size:16px;font-weight:700;">${safeOrderNumber}</div>
-                </div>
-
-                <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-                    <thead>
-                        <tr>
-                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:left;font-size:12px;">Product</th>
-                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:center;font-size:12px;">Size</th>
-                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:center;font-size:12px;">Qty</th>
-                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:right;font-size:12px;">Price</th>
-                            <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:right;font-size:12px;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>${itemRowsHtml}</tbody>
-                </table>
-
-                <div style="margin-left:auto;max-width:300px;font-size:14px;line-height:1.9;">
-                    <div><span>Subtotal</span><span style="float:right;">${Number(subtotal || 0).toFixed(2)} TRY</span></div>
-                    <div><span>Shipping</span><span style="float:right;">${Number(shippingCost || 0).toFixed(2)} TRY</span></div>
-                    <div style="font-weight:700;font-size:16px;border-top:1px solid #111;margin-top:8px;padding-top:8px;"><span>Total</span><span style="float:right;">${Number(totalAmount || 0).toFixed(2)} TRY</span></div>
-                </div>
-
-                <div style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;font-size:13px;line-height:1.7;color:#555;">
-                    <strong style="color:#111;">Shipping</strong><br>
-                    Method: ${safeShippingMethod}<br>
-                    Address: ${safeShippingAddress}<br>
-                    Phone: ${safePhone}
-                </div>
-            </div>
-        </div>
-    `;
-
-    return { text, html };
-}
-
-async function sendOrderEmail(orderData) {
-    try {
-        const { text, html } = buildOrderEmail(orderData);
-        await sendResendEmail({
-            to: orderData.customerEmail,
-            subject: `STIŁUS - ${getOrderStatusLabel(orderData.status)} - ${orderData.orderNumber}`,
-            text,
-            html
-        });
-        return true;
-    } catch (error) {
-        console.error("Order email error:", error);
-        return false;
-    }
 }
 
 function secureCompare(valueA, valueB) {
@@ -810,10 +583,6 @@ function hashCustomerPassword(password, salt) {
         salt,
         64
     ).toString("hex");
-}
-
-function hashPasswordResetToken(token) {
-    return crypto.createHash("sha256").update(String(token)).digest("hex");
 }
 
 function createCustomerSession(customerId) {
@@ -1222,28 +991,32 @@ app.post(
             }
         );
     },
-    (req, res) => {
-        if (!req.file) {
-            return res.status(400).json({
+    async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Image file is required"
+                });
+            }
+
+            const uploaded = await uploadImageToR2(req.file);
+
+            return res.status(201).json({
+                success: true,
+                message: "Image uploaded successfully",
+                filename: uploaded.key,
+                bucket: uploaded.bucket,
+                imageUrl: uploaded.imageUrl
+            });
+        } catch (error) {
+            console.error("R2 image upload error:", error);
+
+            return res.status(500).json({
                 success: false,
-                message:
-                    "Image file is required"
+                message: error.message || "Failed to upload image"
             });
         }
-
-        // Use the permanent public URL in production instead of a temporary
-        // Cloudflare tunnel URL. PUBLIC_BASE_URL should be your Render service URL.
-        const baseUrl = publicBaseUrl || `${req.protocol}://${req.get("host")}`;
-        const imageUrl = `${baseUrl}/uploads/${encodeURIComponent(req.file.filename)}`;
-
-        res.status(201).json({
-            success: true,
-            message:
-                "Image uploaded successfully",
-            filename:
-                req.file.filename,
-            imageUrl
-        });
     }
 );
 
@@ -1545,7 +1318,8 @@ app.post(
                         price,
                         image,
                         images,
-                        stock,        created_at
+                        stock,
+                        created_at
                     `,
                     [
                         cleanId,
@@ -2222,15 +1996,6 @@ app.patch(
                     SELECT
                         id,
                         order_number,
-                        customer_first_name,
-                        customer_last_name,
-                        customer_email,
-                        customer_phone,
-                        shipping_address,
-                        shipping_method,
-                        subtotal,
-                        shipping_cost,
-                        total_amount,
                         status
                     FROM orders
                     WHERE order_number = $1
@@ -2377,40 +2142,9 @@ app.patch(
                     ]
                 );
 
-            const statusItemsResult =
-                await client.query(
-                    `
-                    SELECT
-                        product_name,
-                        size,
-                        quantity,
-                        unit_price
-                    FROM order_items
-                    WHERE order_id = $1
-                    ORDER BY id ASC
-                    `,
-                    [order.id]
-                );
-
             await client.query(
                 "COMMIT"
             );
-
-            await sendOrderEmail({
-                orderNumber: order.order_number,
-                customerFirstName: order.customer_first_name,
-                customerLastName: order.customer_last_name,
-                customerEmail: order.customer_email,
-                customerPhone: order.customer_phone,
-                shippingAddress: order.shipping_address,
-                shippingMethod: order.shipping_method,
-                subtotal: order.subtotal,
-                shippingCost: order.shipping_cost,
-                totalAmount: order.total_amount,
-                status,
-                items: statusItemsResult.rows,
-                isStatusUpdate: true
-            });
 
             res.json({
                 success: true,
@@ -2528,169 +2262,6 @@ app.post(
                 success: false,
                 message: error.message || "Failed to create account"
             });
-        }
-    }
-);
-
-app.post(
-    "/api/customers/forgot-password",
-    async (req, res) => {
-        try {
-            const email = String(req.body.email || "").trim().toLowerCase();
-
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Please enter a valid email address"
-                });
-            }
-
-            const genericResponse = {
-                success: true,
-                message: "If an account exists for this email, a password reset link has been sent."
-            };
-
-            const customerResult = await pool.query(
-                `SELECT id, name, email FROM customers WHERE LOWER(email) = LOWER($1) LIMIT 1`,
-                [email]
-            );
-
-            if (!customerResult.rows.length) {
-                return res.json(genericResponse);
-            }
-
-            const customer = customerResult.rows[0];
-            const rawToken = crypto.randomBytes(32).toString("hex");
-            const tokenHash = hashPasswordResetToken(rawToken);
-            const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_DURATION);
-
-            await pool.query(
-                `UPDATE password_reset_tokens SET used_at = NOW() WHERE customer_id = $1 AND used_at IS NULL`,
-                [customer.id]
-            );
-
-            await pool.query(
-                `INSERT INTO password_reset_tokens (customer_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
-                [customer.id, tokenHash, expiresAt]
-            );
-
-            const resetBaseUrl = String(process.env.FRONTEND_URL || "https://stilusist.com").replace(/\/$/, "");
-            const resetUrl = `${resetBaseUrl}/?reset_token=${encodeURIComponent(rawToken)}`;
-
-            const safeName = escapeHtml(customer.name || "");
-            const safeResetUrl = escapeHtml(resetUrl);
-
-            const text =
-                `Hi ${customer.name || ""},\n\n` +
-                `We received a request to reset your STIŁUS password.\n\n` +
-                `Use this link to create a new password:\n${resetUrl}\n\n` +
-                `This link expires in 1 hour and can only be used once.\n\n` +
-                `If you did not request a password reset, you can ignore this email.\n\n` +
-                `STIŁUS`;
-
-            const html = `
-                <div style="margin:0;background:#f6f6f6;padding:40px 16px;font-family:Arial,Helvetica,sans-serif;color:#111;">
-                    <div style="max-width:640px;margin:0 auto;background:#fff;padding:40px;border:1px solid #e5e5e5;">
-                        <div style="font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:28px;">STIŁUS</div>
-                        <h1 style="font-size:24px;margin:0 0 12px;">Reset your password</h1>
-                        <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">Hi ${safeName}, we received a request to reset your STIŁUS password.</p>
-                        <a href="${safeResetUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:700;">Create New Password</a>
-                        <p style="font-size:13px;line-height:1.6;color:#666;margin:24px 0 0;">This link expires in 1 hour and can only be used once. If you did not request a password reset, you can ignore this email.</p>
-                    </div>
-                </div>
-            `;
-
-            await sendResendEmail({
-                to: customer.email,
-                subject: "STIŁUS - Reset Your Password",
-                text,
-                html
-            });
-
-            return res.json(genericResponse);
-        } catch (error) {
-            console.error("Forgot password error:", error);
-            return res.status(500).json({
-                success: false,
-                message: "Unable to process password reset request"
-            });
-        }
-    }
-);
-
-app.post(
-    "/api/customers/reset-password",
-    async (req, res) => {
-        let client;
-
-        try {
-            const token = String(req.body.token || "").trim();
-            const newPassword = String(req.body.newPassword || "");
-
-            if (!token || !newPassword) {
-                return res.status(400).json({ success: false, message: "Reset token and new password are required" });
-            }
-
-            if (newPassword.length < 6) {
-                return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
-            }
-
-            const tokenHash = hashPasswordResetToken(token);
-            client = await pool.connect();
-            await client.query("BEGIN");
-
-            const tokenResult = await client.query(
-                `SELECT id, customer_id, expires_at, used_at FROM password_reset_tokens WHERE token_hash = $1 LIMIT 1 FOR UPDATE`,
-                [tokenHash]
-            );
-
-            if (!tokenResult.rows.length) {
-                await client.query("ROLLBACK");
-                return res.status(400).json({ success: false, message: "This password reset link is invalid or has expired" });
-            }
-
-            const resetToken = tokenResult.rows[0];
-
-            if (resetToken.used_at || new Date(resetToken.expires_at).getTime() <= Date.now()) {
-                await client.query("ROLLBACK");
-                return res.status(400).json({ success: false, message: "This password reset link is invalid or has expired" });
-            }
-
-            const salt = crypto.randomBytes(16).toString("hex");
-            const passwordHash = hashCustomerPassword(newPassword, salt);
-
-            const customerResult = await client.query(
-                `UPDATE customers SET password_salt = $1, password_hash = $2 WHERE id = $3 RETURNING id`,
-                [salt, passwordHash, resetToken.customer_id]
-            );
-
-            if (!customerResult.rows.length) {
-                await client.query("ROLLBACK");
-                return res.status(404).json({ success: false, message: "Customer account not found" });
-            }
-
-            await client.query(
-                `UPDATE password_reset_tokens SET used_at = NOW() WHERE customer_id = $1 AND used_at IS NULL`,
-                [resetToken.customer_id]
-            );
-
-            await client.query("COMMIT");
-
-            for (const [sessionToken, session] of customerSessions.entries()) {
-                if (session && session.customerId === resetToken.customer_id) {
-                    customerSessions.delete(sessionToken);
-                }
-            }
-
-            return res.json({ success: true, message: "Password reset successfully" });
-        } catch (error) {
-            if (client) {
-                try { await client.query("ROLLBACK"); } catch (rollbackError) { console.error("Password reset rollback error:", rollbackError); }
-            }
-            console.error("Reset password error:", error);
-            return res.status(500).json({ success: false, message: "Unable to reset password" });
-        } finally {
-            if (client) client.release();
         }
     }
 );
@@ -2981,7 +2552,8 @@ app.get(
                                 'quantity', oi.quantity,
                                 'unit_price', oi.unit_price
                             ) ORDER BY oi.id
-                        ) FILTER (WHERE oi.id IS NOT NULL),      '[]'::json
+                        ) FILTER (WHERE oi.id IS NOT NULL),
+                        '[]'::json
                     ) AS items
                 FROM orders o
                 LEFT JOIN order_items oi ON oi.order_id = o.id
@@ -3967,22 +3539,6 @@ app.post(
                 "COMMIT"
             );
 
-            await sendOrderEmail({
-                orderNumber: orderResult.rows[0].order_number,
-                customerFirstName: customerFirstName.trim(),
-                customerLastName: customerLastName.trim(),
-                customerEmail: customerEmail.trim(),
-                customerPhone: customerPhone.trim(),
-                shippingAddress: shippingAddress.trim(),
-                shippingMethod,
-                subtotal,
-                shippingCost,
-                totalAmount,
-                status: orderResult.rows[0].status,
-                items: verifiedItems,
-                isStatusUpdate: false
-            });
-
             res.status(201).json({
                 success: true,
                 message:
@@ -4379,13 +3935,12 @@ app.use(
    START SERVER
 ========================= */
 
-ensureCoreStoreTables()
-    .then(() => Promise.all([
-        ensureProductImagesColumn(),
-        ensureOrderMoneyColumns(),
-        ensureCustomersTable(),
-        ensureDiscountTables()
-    ]))
+Promise.all([
+    ensureProductImagesColumn(),
+    ensureOrderMoneyColumns(),
+    ensureCustomersTable(),
+    ensureDiscountTables()
+])
     .then(() => {
         app.listen(PORT, () => {
             console.log(`STILUS Backend is running on port ${PORT}`);

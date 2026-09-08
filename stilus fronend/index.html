@@ -3160,7 +3160,7 @@
 
             document.getElementById('heroBanner').classList.add('hidden');
             title.innerText=currentLang==="tr"?`"${query.toUpperCase()}" İÇİN ARAMA SONUÇLARI`:`SEARCH RESULTS FOR "${query.toUpperCase()}"`;
-            const filtered = productsData.filter( لاitem => item.name.toLowerCase().includes(query));
+            const filtered = productsData.filter(item => item.name.toLowerCase().includes(query));
             renderMainProducts(filtered, 'productGrid');
             document.querySelectorAll('.nav-cat-link').forEach(l => l.classList.remove('active'));
         }

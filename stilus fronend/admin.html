@@ -350,7 +350,16 @@ function previewFiles(inputId,containerId){
  files.forEach(f=>{const img=document.createElement("img");img.src=URL.createObjectURL(f);img.onload=()=>URL.revokeObjectURL(img.src);c.appendChild(img)})
 }
 async function uploadImages(files,msgEl){
- const urls=[];for(let i=0;i<files.length;i++){msgEl.innerHTML=`<div class="message">Uploading image ${i+1} of ${files.length}...</div>`;const fd=new FormData();fd.append("image",files[i]);const d=await api("/api/admin/upload-image",{method:"POST",body:fd});urls.push(d.imageUrl)}return urls
+ const urls=[];
+ for(let i=0;i<files.length;i++){
+  msgEl.innerHTML=`<div class="message">Uploading image ${i+1} of ${files.length}...</div>`;
+  const fd=new FormData();
+  fd.append("image",files[i]);
+  const d=await api("/api/admin/upload-image",{method:"POST",body:fd});
+  if(!d.imageUrl)throw new Error("Image upload completed without a storage URL.");
+  urls.push(d.imageUrl);
+ }
+ return urls;
 }
 function showAddProductForm(){document.getElementById("addProductForm").classList.remove("hidden");renderStockGrid("productStockGrid",document.getElementById("productCategory").value,{});document.getElementById("productName").focus()}
 function hideAddProductForm(){document.getElementById("addProductForm").classList.add("hidden");document.getElementById("productFormMessage").innerHTML=""}
@@ -553,7 +562,7 @@ document.getElementById("adminPassword").addEventListener("keydown",e=>{if(e.key
 document.getElementById("orderSearchInput").addEventListener("keydown",e=>{if(e.key==="Enter")searchOrder()});
 document.getElementById("productCategory").addEventListener("change",e=>renderStockGrid("productStockGrid",e.target.value,{}));
 document.getElementById("editProductCategory").addEventListener("change",e=>renderStockGrid("editProductStockGrid",e.target.value,{}));
-document.getElementById("productImages").addEventListener("change",()=>previewFiles("productImages","productImagePreviewGrid"));
+const productImagesInput=document.getElementById("productImages"); if(productImagesInput)productImagesInput.addEventListener("change",()=>previewFiles("productImages","productImagePreviewGrid"));
 checkSession();
 renderStockGrid("productStockGrid","hoodies",{});
 </script>
