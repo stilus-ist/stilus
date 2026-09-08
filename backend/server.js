@@ -551,6 +551,62 @@ const upload = multer({
     }
 });
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/\'/g, "&#39;");
+}
+
+async function sendResendEmail({ to, subject, text, html, replyTo }) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+        throw new Error("Email service is not configured");
+    }
+
+    const fromEmail =
+        process.env.CONTACT_FROM_EMAIL ||
+        "STIŁUS <noreply@stilusist.com>";
+
+    const payload = {
+        from: fromEmail,
+        to: Array.isArray(to) ? to : [to],
+        subject: String(subject || "").slice(0, 998),
+        text: String(text || "")
+    };
+
+    if (html) payload.html = String(html);
+    if (replyTo) payload.reply_to = String(replyTo);
+
+    const response = await fetch(
+        "https://api.resend.com/emails",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${resendApiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        }
+    );
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        console.error("Resend email error:", result);
+        throw new Error(
+            result?.message ||
+            result?.error ||
+            "Failed to send email"
+        );
+    }
+
+    return result;
+}
+
 function secureCompare(valueA, valueB) {
     const bufferA = Buffer.from(String(valueA));
     const bufferB = Buffer.from(String(valueB));
