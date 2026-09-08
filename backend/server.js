@@ -6,7 +6,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { Pool, types } = require("pg");
-const { S3Client, PutObjectCommand, HeadObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutObjectCommand, HeadObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 
 // Keep PostgreSQL DATE values as YYYY-MM-DD strings so dates of birth never shift by timezone.
 types.setTypeParser(1082, (value) => value);
@@ -30,6 +30,14 @@ const R2_BUCKET_NAME = String(process.env.R2_BUCKET_NAME || process.env.CLOUDFLA
 const R2_PUBLIC_URL = String(
     process.env.R2_PUBLIC_URL ||
     "https://pub-458b056383d9497fbdb928840693d424.r2.dev"
+).replace(/\/$/, "");
+
+// Public backend URL used for image proxy URLs. The proxy keeps the storefront
+// independent from R2 public-access/domain settings while the files remain in R2.
+const PUBLIC_API_URL = String(
+    process.env.PUBLIC_API_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    "https://stilus.onrender.com"
 ).replace(/\/$/, "");
 
 const r2Client = R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY
@@ -522,10 +530,15 @@ async function uploadImageToR2(file) {
         })
     );
 
+    const encodedKey = encodeURIComponent(key);
+
     return {
         key,
         bucket: R2_BUCKET_NAME,
-        imageUrl: `${R2_PUBLIC_URL}/${key.split("/").map(encodeURIComponent).join("/")}`
+        // Use the backend proxy as the canonical URL. This avoids broken images
+        // when the R2 public URL/domain is changed or unavailable.
+        imageUrl: `${PUBLIC_API_URL}/api/media?key=${encodedKey}`,
+        r2Url: `${R2_PUBLIC_URL}/${key.split("/").map(encodeURIComponent).join("/")}`
     };
 }
 
@@ -1016,6 +1029,70 @@ app.post(
                 success: false,
                 message: error.message || "Failed to upload image"
             });
+        }
+    }
+);
+
+
+/* =========================
+   PUBLIC R2 MEDIA PROXY
+========================= */
+
+app.get(
+    "/api/media",
+    async (req, res) => {
+        try {
+            if (!r2Client) {
+                return res.status(503).send("Image storage is not configured");
+            }
+
+            const key = String(req.query.key || "").trim();
+
+            // Only allow objects created by the product-image uploader.
+            if (!key || !key.startsWith("products/") || key.includes("..")) {
+                return res.status(400).send("Invalid media key");
+            }
+
+            const object = await r2Client.send(
+                new GetObjectCommand({
+                    Bucket: R2_BUCKET_NAME,
+                    Key: key
+                })
+            );
+
+            if (object.ContentType) {
+                res.setHeader("Content-Type", object.ContentType);
+            }
+
+            if (object.ContentLength !== undefined) {
+                res.setHeader("Content-Length", String(object.ContentLength));
+            }
+
+            res.setHeader(
+                "Cache-Control",
+                "public, max-age=31536000, immutable"
+            );
+
+            if (!object.Body || typeof object.Body.pipe !== "function") {
+                return res.status(404).send("Image not found");
+            }
+
+            object.Body.on("error", (error) => {
+                console.error("R2 media stream error:", error);
+                if (!res.headersSent) {
+                    res.status(500).end("Failed to read image");
+                } else {
+                    res.end();
+                }
+            });
+
+            object.Body.pipe(res);
+        } catch (error) {
+            const status = error?.$metadata?.httpStatusCode === 404 ? 404 : 500;
+            console.error("R2 media proxy error:", error);
+            return res.status(status).send(
+                status === 404 ? "Image not found" : "Failed to load image"
+            );
         }
     }
 );
