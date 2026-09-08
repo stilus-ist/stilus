@@ -11,7 +11,7 @@ const { Pool, types } = require("pg");
 types.setTypeParser(1082, (value) => value);
 
 const app = express();
-const PORT = 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 const ADMIN_SESSION_DURATION = 8 * 60 * 60 * 1000;
 const adminSessions = new Map();
@@ -960,7 +960,7 @@ app.post(
         }
 
         const imageUrl =
-            `http://localhost:${PORT}/uploads/${req.file.filename}`;
+             `https://plug-misc-incredible-databases.trycloudflare.com/uploads/${req.file.filename}`;
 
         res.status(201).json({
             success: true,

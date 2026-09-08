@@ -225,7 +225,15 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 </div>
 
 <script>
-const API_URL="http://localhost:5000";
+const API_URL="https://stocks-which-survey-salvador.trycloudflare.com";
+function normalizeMediaUrl(url){
+ const value=String(url||"").trim();
+ if(!value)return "";
+ const uploadIndex=value.indexOf("/uploads/");
+ if(uploadIndex!==-1)return API_URL+value.slice(uploadIndex);
+ if(value.startsWith("/uploads/"))return API_URL+value;
+ return value
+}
 const TOKEN_KEY="stilus_admin_token";
 let currentSection="orders";
 
@@ -365,10 +373,10 @@ async function loadProducts(){
 }
 function renderProducts(ps){
  const c=document.getElementById("productsContainer");if(!ps?.length){c.innerHTML='<div class="message">No products found.</div>';return}
- c.innerHTML='<div class="products-grid">'+ps.map(p=>{const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];return `<div class="product-card"><img class="product-image" src="${esc(imgs[0])}" alt="${esc(p.name)}" onerror="this.style.display='none'"><div class="product-gallery">${imgs.slice(0,6).map(u=>`<img src="${esc(u)}" alt="" onerror="this.style.display='none'">`).join("")}</div><h3>${esc(p.name)}</h3><div class="product-meta"><b>ID:</b> ${esc(p.id)}</div><div class="product-meta"><b>Category:</b> ${esc(p.category)}</div><div class="product-meta"><b>Price:</b> ${p.price} TL</div><div class="stock-list"><b>Stock</b>${Object.entries(p.stock||{}).map(([s,q])=>`<div class="stock-row"><span>${esc(s)}</span><strong>${q}</strong></div>`).join("")}</div><div class="button-row" style="margin-top:15px"><button class="main-btn" onclick="openEditProduct('${escJs(p.id)}')">Edit Product</button><button class="danger-btn" onclick="deleteProduct('${escJs(p.id)}','${escJs(p.name)}')">Delete Product</button></div></div>`}).join("")+'</div>'
+ c.innerHTML='<div class="products-grid">'+ps.map(p=>{const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).map(normalizeMediaUrl);return `<div class="product-card"><img class="product-image" src="${esc(imgs[0])}" alt="${esc(p.name)}" onerror="this.style.display='none'"><div class="product-gallery">${imgs.slice(0,6).map(u=>`<img src="${esc(u)}" alt="" onerror="this.style.display='none'">`).join("")}</div><h3>${esc(p.name)}</h3><div class="product-meta"><b>ID:</b> ${esc(p.id)}</div><div class="product-meta"><b>Category:</b> ${esc(p.category)}</div><div class="product-meta"><b>Price:</b> ${p.price} TL</div><div class="stock-list"><b>Stock</b>${Object.entries(p.stock||{}).map(([s,q])=>`<div class="stock-row"><span>${esc(s)}</span><strong>${q}</strong></div>`).join("")}</div><div class="button-row" style="margin-top:15px"><button class="main-btn" onclick="openEditProduct('${escJs(p.id)}')">Edit Product</button><button class="danger-btn" onclick="deleteProduct('${escJs(p.id)}','${escJs(p.name)}')">Delete Product</button></div></div>`}).join("")+'</div>'
 }
 async function openEditProduct(id){
- try{const d=await api("/api/products/"+encodeURIComponent(id)),p=d.product;document.getElementById("editProductId").value=p.id;document.getElementById("editProductCategory").value=p.category;document.getElementById("editProductName").value=p.name;document.getElementById("editProductPrice").value=p.price;renderStockGrid("editProductStockGrid",p.category,p.stock||{});const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];document.getElementById("editProductCurrentImages").innerHTML=imgs.map(u=>`<img src="${esc(u)}" alt="">`).join("");document.getElementById("editProductImage1").value="";document.getElementById("editProductImage2").value="";document.getElementById("editProductFormMessage").innerHTML="";document.getElementById("editProductForm").classList.remove("hidden");document.getElementById("editProductForm").scrollIntoView({behavior:"smooth"})}catch(x){alert(x.message)}
+ try{const d=await api("/api/products/"+encodeURIComponent(id)),p=d.product;document.getElementById("editProductId").value=p.id;document.getElementById("editProductCategory").value=p.category;document.getElementById("editProductName").value=p.name;document.getElementById("editProductPrice").value=p.price;renderStockGrid("editProductStockGrid",p.category,p.stock||{});const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).map(normalizeMediaUrl);document.getElementById("editProductCurrentImages").innerHTML=imgs.map(u=>`<img src="${esc(u)}" alt="">`).join("");document.getElementById("editProductImage1").value="";document.getElementById("editProductImage2").value="";document.getElementById("editProductFormMessage").innerHTML="";document.getElementById("editProductForm").classList.remove("hidden");document.getElementById("editProductForm").scrollIntoView({behavior:"smooth"})}catch(x){alert(x.message)}
 }
 function hideEditProductForm(){document.getElementById("editProductForm").classList.add("hidden")}
 async function updateProduct(){
@@ -511,7 +519,7 @@ async function loadHomepageBanner(){
  if(!preview)return;
  try{
   const d=await api("/api/admin/store-settings"),s=d.settings||{};
-  preview.innerHTML=s.banner_url?`<img src="${esc(s.banner_url)}" alt="Homepage Banner">`:"";
+  preview.innerHTML=s.banner_url?`<img src="${esc(normalizeMediaUrl(s.banner_url))}" alt="Homepage Banner">`:"";
  }catch(x){
   document.getElementById("homepageBannerMessage").innerHTML='<div class="error-message">'+esc(x.message)+'</div>';
  }
