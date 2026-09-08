@@ -757,6 +757,145 @@ function formatOrderMoney(value) {
     return `${Number(value || 0).toFixed(2)} TL`;
 }
 
+function escapeEmailHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function normalizeOrderEmailItem(item) {
+    const productName = item.productName ?? item.product_name ?? "Product";
+    const size = item.size ?? "-";
+    const quantity = Number(item.quantity || 0);
+    const unitPrice = Number(item.unitPrice ?? item.unit_price ?? 0);
+    const imageUrl = String(
+        item.imageUrl ?? item.image_url ?? item.image ?? ""
+    ).trim();
+
+    return {
+        productName: String(productName),
+        size: String(size),
+        quantity,
+        unitPrice,
+        imageUrl,
+        lineTotal: unitPrice * quantity
+    };
+}
+
+function orderStatusPresentation(status) {
+    const map = {
+        pending: {
+            label: "Order Received",
+            headline: "We received your order",
+            message: "Your STIŁUS order has been received and is waiting to be processed."
+        },
+        processing: {
+            label: "Processing",
+            headline: "Your order is being prepared",
+            message: "We are preparing your STIŁUS order for shipment."
+        },
+        shipped: {
+            label: "Shipped",
+            headline: "Your order has been shipped",
+            message: "Your STIŁUS order is on the way to you."
+        },
+        delivered: {
+            label: "Delivered",
+            headline: "Your order has been delivered",
+            message: "Your STIŁUS order has been marked as delivered. We hope you enjoy it."
+        },
+        cancelled: {
+            label: "Cancelled",
+            headline: "Your order has been cancelled",
+            message: "Your STIŁUS order has been cancelled."
+        }
+    };
+
+    return map[String(status || "").toLowerCase()] || {
+        label: String(status || "Updated"),
+        headline: "Your order has been updated",
+        message: "There is a new update for your STIŁUS order."
+    };
+}
+
+function buildOrderEmailHtml({ order, items, statusUpdate = false }) {
+    const normalizedItems = (Array.isArray(items) ? items : []).map(normalizeOrderEmailItem);
+    const status = String(order.status || "pending").toLowerCase();
+    const statusInfo = orderStatusPresentation(status);
+    const orderNumber = escapeEmailHtml(order.orderNumber ?? order.order_number ?? "");
+    const firstName = escapeEmailHtml(order.customerFirstName ?? order.customer_first_name ?? "");
+    const subtotal = Number(order.subtotal || 0);
+    const shippingCost = Number(order.shippingCost ?? order.shipping_cost ?? 0);
+    const discountAmount = Number(order.discountAmount ?? order.discount_amount ?? 0);
+    const totalAmount = Number(order.totalAmount ?? order.total_amount ?? 0);
+
+    const itemRows = normalizedItems.map((item) => {
+        const safeImage = item.imageUrl ? escapeEmailHtml(item.imageUrl) : "";
+        const imageCell = safeImage
+            ? `<img src="${safeImage}" alt="${escapeEmailHtml(item.productName)}" width="96" height="112" style="display:block;width:96px;height:112px;object-fit:cover;border:0;background:#eeeeee;" />`
+            : `<div style="width:96px;height:112px;background:#eeeeee;color:#777777;font-size:11px;line-height:112px;text-align:center;">STIŁUS</div>`;
+
+        return `
+            <tr>
+                <td style="padding:18px 0;border-bottom:1px solid #e6e6e6;width:112px;vertical-align:top;">${imageCell}</td>
+                <td style="padding:18px 12px;border-bottom:1px solid #e6e6e6;vertical-align:top;">
+                    <div style="font-size:15px;font-weight:700;color:#111111;margin-bottom:7px;">${escapeEmailHtml(item.productName)}</div>
+                    <div style="font-size:13px;color:#666666;line-height:1.7;">Size: ${escapeEmailHtml(item.size)}<br>Quantity: ${item.quantity}</div>
+                </td>
+                <td style="padding:18px 0;border-bottom:1px solid #e6e6e6;text-align:right;vertical-align:top;white-space:nowrap;">
+                    <div style="font-size:14px;color:#777777;margin-bottom:7px;">${formatOrderMoney(item.unitPrice)} each</div>
+                    <div style="font-size:15px;font-weight:700;color:#111111;">${formatOrderMoney(item.lineTotal)}</div>
+                </td>
+            </tr>`;
+    }).join("");
+
+    return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background:#efefef;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efefef;padding:28px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #dddddd;">
+<tr><td style="padding:36px 42px 24px 42px;background:#111111;color:#ffffff;">
+    <div style="font-size:34px;letter-spacing:8px;font-weight:700;">STIŁUS</div>
+</td></tr>
+<tr><td style="padding:34px 42px 10px 42px;">
+    <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#777777;margin-bottom:12px;">${statusUpdate ? "ORDER STATUS UPDATE" : "ORDER CONFIRMATION"}</div>
+    <h1 style="margin:0 0 12px 0;font-size:28px;line-height:1.2;color:#111111;">${statusUpdate ? escapeEmailHtml(statusInfo.headline) : "Thank you for your order"}</h1>
+    <p style="margin:0;color:#555555;font-size:15px;line-height:1.7;">Hi ${firstName || "there"}, ${statusUpdate ? escapeEmailHtml(statusInfo.message) : "your STIŁUS order has been confirmed."}</p>
+</td></tr>
+<tr><td style="padding:18px 42px 0 42px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f7;border:1px solid #e3e3e3;">
+        <tr>
+            <td style="padding:18px;font-size:13px;color:#666666;">ORDER<br><strong style="display:block;margin-top:6px;color:#111111;font-size:15px;">#${orderNumber}</strong></td>
+            <td style="padding:18px;font-size:13px;color:#666666;text-align:right;">STATUS<br><strong style="display:block;margin-top:6px;color:#111111;font-size:15px;">${escapeEmailHtml(statusInfo.label)}</strong></td>
+        </tr>
+    </table>
+</td></tr>
+<tr><td style="padding:28px 42px 0 42px;">
+    <div style="font-size:17px;font-weight:700;margin-bottom:6px;">Order details</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${itemRows}</table>
+</td></tr>
+<tr><td style="padding:24px 42px 0 42px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:2;">
+        <tr><td style="color:#666666;">Subtotal</td><td style="text-align:right;color:#111111;">${formatOrderMoney(subtotal)}</td></tr>
+        <tr><td style="color:#666666;">Shipping</td><td style="text-align:right;color:#111111;">${formatOrderMoney(shippingCost)}</td></tr>
+        ${discountAmount > 0 ? `<tr><td style="color:#666666;">Discount</td><td style="text-align:right;color:#111111;">-${formatOrderMoney(discountAmount)}</td></tr>` : ""}
+        <tr><td style="padding-top:10px;border-top:1px solid #dddddd;font-size:17px;font-weight:700;">Total</td><td style="padding-top:10px;border-top:1px solid #dddddd;text-align:right;font-size:20px;font-weight:700;">${formatOrderMoney(totalAmount)}</td></tr>
+    </table>
+</td></tr>
+<tr><td style="padding:30px 42px 36px 42px;color:#777777;font-size:12px;line-height:1.7;">
+    Thank you for shopping with STIŁUS.<br>This is an automated transactional email regarding your order.
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
 async function sendOrderConfirmationEmails(order, items) {
     const customerEmail = String(order.customerEmail || "").trim();
     const storeEmail = String(
@@ -766,8 +905,9 @@ async function sendOrderConfirmationEmails(order, items) {
         "info@stilusist.com"
     ).trim();
 
-    const itemLines = (Array.isArray(items) ? items : []).map((item) =>
-        `- ${item.productName} | Size: ${item.size} | Qty: ${item.quantity} | ${formatOrderMoney(Number(item.unitPrice) * Number(item.quantity))}`
+    const normalizedItems = (Array.isArray(items) ? items : []).map(normalizeOrderEmailItem);
+    const itemLines = normalizedItems.map((item) =>
+        `- ${item.productName} | Size: ${item.size} | Qty: ${item.quantity} | ${formatOrderMoney(item.lineTotal)}`
     );
 
     const details =
@@ -783,20 +923,19 @@ async function sendOrderConfirmationEmails(order, items) {
         `Discount: ${formatOrderMoney(order.discountAmount)}\n` +
         `Total: ${formatOrderMoney(order.totalAmount)}`;
 
-    const customerText =
-        `Thank you for your STIŁUS order.\n\n${details}\n\n` +
-        `We will contact you if there is an update to your order.`;
-
-    const storeText = `New STIŁUS order received.\n\n${details}`;
-
     const jobs = [];
 
     if (customerEmail) {
         jobs.push(
             sendTransactionalEmail({
                 to: customerEmail,
-                subject: `STIŁUS Order Confirmation - ${order.orderNumber}`,
-                text: customerText
+                subject: `STIŁUS - Order Confirmation #${order.orderNumber}`,
+                text: `Thank you for your STIŁUS order.\n\n${details}`,
+                html: buildOrderEmailHtml({
+                    order: { ...order, status: order.status || "pending" },
+                    items,
+                    statusUpdate: false
+                })
             })
         );
     }
@@ -806,7 +945,7 @@ async function sendOrderConfirmationEmails(order, items) {
             sendTransactionalEmail({
                 to: storeEmail,
                 subject: `New STIŁUS Order - ${order.orderNumber}`,
-                text: storeText,
+                text: `New STIŁUS order received.\n\n${details}`,
                 replyTo: customerEmail || undefined
             })
         );
@@ -826,6 +965,37 @@ async function sendOrderConfirmationEmails(order, items) {
     if (failures.length === results.length) {
         throw new Error("Unable to send order confirmation email");
     }
+}
+
+async function sendOrderStatusUpdateEmail(order, items) {
+    const customerEmail = String(order.customer_email || order.customerEmail || "").trim();
+    if (!customerEmail) return;
+
+    const status = String(order.status || "").toLowerCase();
+    const statusInfo = orderStatusPresentation(status);
+    const orderNumber = order.order_number || order.orderNumber;
+    const normalizedItems = (Array.isArray(items) ? items : []).map(normalizeOrderEmailItem);
+    const itemLines = normalizedItems.map((item) =>
+        `- ${item.productName} | Size: ${item.size} | Qty: ${item.quantity} | ${formatOrderMoney(item.lineTotal)}`
+    );
+
+    const text =
+        `${statusInfo.headline}\n\n` +
+        `${statusInfo.message}\n\n` +
+        `Order: #${orderNumber}\n` +
+        `Status: ${statusInfo.label}\n\n` +
+        `${itemLines.join("\n")}\n\n` +
+        `Subtotal: ${formatOrderMoney(order.subtotal)}\n` +
+        `Shipping: ${formatOrderMoney(order.shipping_cost)}\n` +
+        `Discount: ${formatOrderMoney(order.discount_amount)}\n` +
+        `Total: ${formatOrderMoney(order.total_amount)}`;
+
+    await sendTransactionalEmail({
+        to: customerEmail,
+        subject: `STIŁUS - ${statusInfo.label} #${orderNumber}`,
+        text,
+        html: buildOrderEmailHtml({ order, items, statusUpdate: true })
+    });
 }
 
 
@@ -2211,6 +2381,15 @@ app.patch(
                     SELECT
                         id,
                         order_number,
+                        customer_first_name,
+                        customer_last_name,
+                        customer_email,
+                        shipping_method,
+                        shipping_address,
+                        subtotal,
+                        shipping_cost,
+                        discount_amount,
+                        total_amount,
                         status
                     FROM orders
                     WHERE order_number = $1
@@ -2340,6 +2519,23 @@ app.patch(
                 }
             }
 
+            const emailItemsResult =
+                await client.query(
+                    `
+                    SELECT
+                        oi.product_name,
+                        oi.size,
+                        oi.quantity,
+                        oi.unit_price,
+                        COALESCE(NULLIF(p.image, ''), p.images->>0, '') AS image_url
+                    FROM order_items oi
+                    LEFT JOIN products p ON p.id = oi.product_id
+                    WHERE oi.order_id = $1
+                    ORDER BY oi.id ASC
+                    `,
+                    [order.id]
+                );
+
             const updateResult =
                 await client.query(
                     `
@@ -2360,6 +2556,21 @@ app.patch(
             await client.query(
                 "COMMIT"
             );
+
+            if (previousStatus !== status && order.customer_email) {
+                try {
+                    await sendOrderStatusUpdateEmail(
+                        {
+                            ...order,
+                            status
+                        },
+                        emailItemsResult.rows
+                    );
+                } catch (emailError) {
+                    // The status update is already committed; email failure must not undo it.
+                    console.error("Order status email error:", emailError);
+                }
+            }
 
             res.json({
                 success: true,
@@ -2606,15 +2817,59 @@ app.post(
             ).replace(/\/$/, "");
 
             const resetUrl = `${storefrontUrl}/?reset_token=${encodeURIComponent(resetToken)}`;
+            const safeCustomerName = String(customer.name || "there")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
 
             try {
                 await sendTransactionalEmail({
                     to: customer.email,
-                    subject: "Reset your STIŁUS password",
+                    subject: "STIŁUS - Reset Your Password",
                     text:
-                        `Hello ${customer.name || ""},\n\n` +
-                        `Use this link to reset your STIŁUS password:\n\n${resetUrl}\n\n` +
-                        `This link expires in 1 hour. If you did not request this, you can ignore this email.`
+                        `Hi ${customer.name || "there"},\n\n` +
+                        `We received a request to reset your STIŁUS password.\n\n` +
+                        `Create a new password here:\n${resetUrl}\n\n` +
+                        `This link expires in 1 hour and can only be used once. If you did not request a password reset, you can ignore this email.`,
+                    html: `
+                        <!doctype html>
+                        <html>
+                        <body style="margin:0;padding:0;background:#242424;font-family:Arial,Helvetica,sans-serif;color:#f5f5f5;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#242424;margin:0;padding:0;">
+                                <tr>
+                                    <td align="center" style="padding:36px 18px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#333333;border:1px solid #4a4a4a;">
+                                            <tr>
+                                                <td style="padding:54px 54px 52px;">
+                                                    <div style="font-size:34px;line-height:1;font-weight:700;letter-spacing:7px;color:#f4f4f4;margin-bottom:56px;">STIŁUS</div>
+
+                                                    <h1 style="margin:0 0 30px;font-size:38px;line-height:1.15;font-weight:700;color:#ffffff;">Reset your<br>password</h1>
+
+                                                    <p style="margin:0 0 34px;font-size:21px;line-height:1.6;color:#f0f0f0;">
+                                                        Hi ${safeCustomerName}, we received a request to reset your STIŁUS password.
+                                                    </p>
+
+                                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 38px;">
+                                                        <tr>
+                                                            <td bgcolor="#f2f2f2" style="border-radius:0;">
+                                                                <a href="${resetUrl}" style="display:inline-block;padding:18px 28px;font-size:18px;font-weight:700;color:#333333;text-decoration:none;background:#f2f2f2;">Create New Password</a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <p style="margin:0;font-size:18px;line-height:1.65;color:#bcbcbc;">
+                                                        This link expires in 1 hour and can only be used once. If you did not request a password reset, you can ignore this email.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                        </html>`
                 });
             } catch (emailError) {
                 console.error("Password reset email error:", emailError);
@@ -3611,7 +3866,9 @@ app.post(
                             name,
                             category,
                             price,
-                            stock
+                            stock,
+                            image,
+                            images
                         FROM products
                         WHERE id = $1
                         FOR UPDATE
@@ -3702,7 +3959,14 @@ app.post(
                     currentStock,
 
                     stock:
-                        product.stock
+                        product.stock,
+
+                    imageUrl:
+                        String(
+                            product.image ||
+                            (Array.isArray(product.images) ? product.images[0] : "") ||
+                            ""
+                        ).trim()
                 });
             }
 
@@ -3945,7 +4209,8 @@ app.post(
                         subtotal,
                         shippingCost,
                         discountAmount,
-                        totalAmount
+                        totalAmount,
+                        status: orderResult.rows[0].status
                     },
                     verifiedItems
                 );
